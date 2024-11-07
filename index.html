@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Streaming Service Pricing</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="text-center my-4">Streaming Service Pricing</h1>
+
+      <!-- Display the total dynamically -->
+      <div id="totalContainer" class="text-center mb-4">
+        <h2>Total: $<span id="totalPrice">0.00</span></h2>
+        <button id="viewPlanBtn" class="btn btn-success">
+          View Custom Plan
+        </button>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+          <select id="sortOptions" class="form-control">
+            <option value="default">Sort by</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+
+        <div class="col-md-6 mb-3">
+          <select id="filterOptions" class="form-control">
+            <option value="all">Filter by Service</option>
+            <!-- Filter options can dynamically populate as well in the future if needed -->
+          </select>
+        </div>
+
+        <div class="col-md-12">
+          <input
+            type="text"
+            id="searchBar"
+            class="form-control"
+            placeholder="Search services..."
+          />
+        </div>
+      </div>
+
+      <!-- Cards for streaming services will be loaded dynamically here -->
+      <div id="servicesContainer" class="row">
+        <!-- Dynamic cards will be inserted here via JavaScript -->
+      </div>
+
+    <!-- Custom Modal -->
+    <div id="planModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h5>Your Custom Plan</h5>
+        <h6>Breakdown by Month:</h6>
+        <ul id="planBreakdown" class="list-group">
+
+
+
+          <!-- Plan breakdown will be inserted here dynamically -->
+        </ul>
+        <hr />
+        <h6>Total Monthly Price: $<span id="monthlyTotal">0.00</span></h6>
+        <h6>
+          Total Price After 3 Months: $<span id="threeMonthTotal">0.00</span>
+        </h6>
+        <h6>
+          Total Price After 6 Months: $<span id="sixMonthTotal">0.00</span>
+        </h6>
+        <h6>
+          Total Price After 9 Months: $<span id="nineMonthTotal">0.00</span>
+        </h6>
+        <h6>Total Price After One Year: $<span id="yearlyTotal">0.00</span></h6>
+
+        <h5>Price Distribution:</h5>
+        <canvas id="planChart" width="400" height="400"></canvas>
+        
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

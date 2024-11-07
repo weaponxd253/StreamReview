@@ -1,0 +1,233 @@
+/* Body and general layout */
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+}
+
+/* Card layout */
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Card title styling */
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Plan styling */
+.plan {
+  font-size: 1rem;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+/* Price styling */
+.price {
+  color: #28a745;
+  font-weight: bold;
+}
+
+/* Add button */
+.add-plan {
+  background-color: #007bff;
+  border: none;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.add-plan:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Search bar styling */
+#searchBar {
+  padding: 12px 15px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease;
+  margin-bottom: 20px;
+  /* Improved spacing */
+}
+
+#searchBar:focus {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Dropdown styling */
+select.form-control {
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Responsive design: Stack cards on small screens */
+@media (max-width: 768px) {
+  .card {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .add-plan {
+    width: 100%;
+  }
+
+  /* Modal adjustments for smaller screens */
+  .modal-content {
+    width: 100%;
+    padding: 20px;
+    max-width: none;
+  }
+}
+
+/* Modal container */
+.modal {
+  display: none;
+  /* Hidden by default */
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Black background with transparency */
+  overflow: hidden;
+  /* Prevent full-page scroll */
+}
+
+/* Modal content */
+.modal-content {
+  background-color: white;
+  margin: 5% auto;
+  /* Center it vertically */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  /* Adjust modal width */
+  max-width: 600px;
+  max-height: 90vh;
+  /* Set max-height to 90% of the viewport */
+  border-radius: 10px;
+  overflow-y: auto;
+  /* Allow scrolling for the content */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+
+
+/* Price highlight */
+#monthlyTotal,
+#threeMonthTotal,
+#sixMonthTotal,
+#nineMonthTotal,
+#yearlyTotal {
+  font-weight: bold;
+  color: #007bff;
+}
+
+/* Add margin to each list item for better readability */
+#planBreakdown .list-group-item {
+  font-size: 16px;
+  padding: 10px;
+  border: none;
+  background-color: #f8f9fa;
+  margin-bottom: 8px;
+  /* Increased margin for better separation */
+}
+
+/* Adjusting the modal heading */
+.modal-content h5 {
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+/* Adjust the prices and totals to be larger and more prominent */
+.modal-content h6 {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+/* Style the close button */
+.close {
+  color: #888;
+  float: right;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.close:hover {
+  color: #000;
+}
+
+/* Style for the selected plan button */
+.btn.selected {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+  cursor: default;
+  margin-bottom: 10px;
+  /* Added spacing */
+}
+
+.btn.selected::after {
+  content: ' ✔';
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+/* Disabled button styling */
+.btn.disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.btn.disabled:hover {
+  color: white;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* Modal Title */
+.modal-content h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  letter-spacing: 0.5px;
+}
+
+/* Totals section text */
+.modal-content p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+  line-height: 1.5;
+  margin: 8px 0;
+}
