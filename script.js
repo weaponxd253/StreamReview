@@ -1,8 +1,11 @@
-// Global variables
+// =========================
+// Global Variables & Elements
+// =========================
+
 let totalPrice = 0;
 let selectedPlans = [];
+let chartInstance = null;
 
-// Elements
 const servicesContainer = document.getElementById("servicesContainer");
 const totalPriceElem = document.getElementById("totalPrice");
 const planBreakdown = document.getElementById("planBreakdown");
@@ -14,15 +17,192 @@ const yearlyTotalElem = document.getElementById("yearlyTotal");
 const modal = document.getElementById("planModal");
 const viewPlanBtn = document.getElementById("viewPlanBtn");
 const closeModal = document.querySelector(".close");
+const darkModeToggle = document.getElementById("darkModeToggle");
+const sidebar = document.getElementById("sidebar");
+const openSidebarBtn = document.getElementById("openSidebarBtn");
+const closeBtn = document.getElementById("closeBtn");
+const overlay = document.getElementById("overlay");
 
-// Function to update total price
+// =========================
+// Sidebar Functionality
+// =========================
+
+openSidebarBtn.addEventListener("click", () => {
+    sidebar.classList.add("open-sidebar");
+    document.body.classList.add("sidebar-open");
+    overlay.classList.add("overlay-active");
+    openSidebarBtn.setAttribute("aria-expanded", "true");
+});
+
+closeBtn.addEventListener("click", closeSidebar);
+overlay.addEventListener("click", closeSidebar);
+
+function closeSidebar() {
+    sidebar.classList.remove("open-sidebar");
+    document.body.classList.remove("sidebar-open");
+    overlay.classList.remove("overlay-active");
+    openSidebarBtn.setAttribute("aria-expanded", "false");
+}
+
+// =========================
+// Theme Handling
+// =========================
+
+if (localStorage.getItem("darkMode") === "enabled") {
+    document.body.classList.add("dark-mode");
+    darkModeToggle.querySelector("i").classList.replace("fa-moon", "fa-sun");
+} else {
+    darkModeToggle.querySelector("i").classList.replace("fa-sun", "fa-moon");
+}
+
+darkModeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark-mode");
+    const icon = darkModeToggle.querySelector("i");
+
+    if (document.body.classList.contains("dark-mode")) {
+        icon.classList.replace("fa-moon", "fa-sun");
+        localStorage.setItem("darkMode", "enabled");
+    } else {
+        icon.classList.replace("fa-sun", "fa-moon");
+        localStorage.setItem("darkMode", "disabled");
+    }
+});
+
+// =========================
+// Data Fetching & Display
+// =========================
+
+fetch("http://localhost:3000/api/services")
+    .then((response) => response.json())
+    .then((data) => {
+        data.forEach((service) => createServiceCard(service));
+        initializeStarRatings();
+    })
+    .catch((error) => console.error("Error fetching services:", error));
+
+function createServiceCard(service) {
+    const sanitizedServiceName = sanitizeServiceName(service.name);
+    const card = document.createElement("div");
+    card.classList.add("col-md-4", "mb-4");
+
+    const cardContent = `
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">${service.name}</h5>
+                <div class="star-rating" data-service="${service.name}">
+                    <i class="fas fa-star" data-value="1"></i>
+                    <i class="fas fa-star" data-value="2"></i>
+                    <i class="fas fa-star" data-value="3"></i>
+                    <i class="fas fa-star" data-value="4"></i>
+                    <i class="fas fa-star" data-value="5"></i>
+                </div>
+                <span class="rating-value">0/5</span>
+                ${service.plans
+                    .map((plan) => `
+                        <div class="plan mb-3" data-service="${sanitizedServiceName}" data-price="${plan.price}">
+                            <button class="btn btn-primary add-plan" data-service="${sanitizedServiceName}" data-plan="${plan.plan}" data-price="${plan.price}">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                            ${plan.plan}: <span class="price">$${plan.price}/month</span>
+                        </div>`).join("")}
+            </div>
+        </div>`;
+    card.innerHTML = cardContent;
+    servicesContainer.appendChild(card);
+}
+
+
+
+
+// =========================
+// Event Listeners
+// =========================
+
+servicesContainer.addEventListener("click", function (event) {
+    if (event.target.classList.contains("add-plan")) {
+        handlePlanSelection(event.target);
+    }
+});
+
+viewPlanBtn.addEventListener("click", () => {
+    updatePlanBreakdown();
+    if (selectedPlans.length > 0) {
+        generateChart(selectedPlans);
+    }
+    modal.style.display = "block";
+});
+
+closeModal.addEventListener("click", () => (modal.style.display = "none"));
+window.addEventListener("click", (event) => {
+    if (event.target === modal) modal.style.display = "none";
+});
+
+// =========================
+// Helper Functions
+// =========================
+
+function sanitizeServiceName(name) {
+    return name.replace(/\s+/g, '-').toLowerCase();
+}
+
+function handlePlanSelection(planButton) {
+    const planElem = planButton.parentElement;
+    const cardElem = planButton.closest(".card");
+    const planName = cardElem.querySelector(".card-title").textContent.trim();
+    const sanitizedPlanName = sanitizeServiceName(planName);
+    const planPrice = parseFloat(planElem.dataset.price);
+
+    if (isNaN(planPrice)) {
+        console.error("Invalid price detected.");
+        return;
+    }
+
+    if (planButton.classList.contains("active")) {
+        deselectPlan(sanitizedPlanName, planPrice, planButton);
+    } else {
+        selectPlan(sanitizedPlanName, planPrice, planButton);
+    }
+    updateTotalPrice();
+}
+
+function selectPlan(sanitizedPlanName, planPrice, planButton) {
+    totalPrice += planPrice;
+    selectedPlans.push({ name: sanitizedPlanName, price: planPrice });
+    planButton.innerHTML = '<i class="fas fa-check"></i> Remove';
+    planButton.classList.add("active");
+
+    const buttonsForService = document.querySelectorAll(`button[data-service='${sanitizedPlanName}']`);
+    buttonsForService.forEach((button) => {
+        if (button !== planButton) {
+            button.disabled = true;
+            button.classList.add("disabled");
+        }
+    });
+}
+
+function deselectPlan(sanitizedPlanName, planPrice, planButton) {
+    totalPrice -= planPrice;
+    selectedPlans = selectedPlans.filter((plan) => !(plan.name === sanitizedPlanName && plan.price === planPrice));
+    planButton.innerHTML = '<i class="fas fa-plus"></i> Add';
+    planButton.classList.remove("active");
+
+    const buttonsForService = document.querySelectorAll(`button[data-service='${sanitizedPlanName}']`);
+    buttonsForService.forEach((button) => {
+        button.disabled = false;
+        button.classList.remove("disabled");
+    });
+}
+
+// =========================
+// Main Functions
+// =========================
+
 function updateTotalPrice() {
     totalPriceElem.textContent = totalPrice.toFixed(2);
 }
 
-// Function to update breakdown (selected services only)
 function updatePlanBreakdown() {
-    planBreakdown.innerHTML = ""; // Clear the previous list
+    planBreakdown.innerHTML = "";
     let monthlyTotal = 0;
 
     selectedPlans.forEach((plan) => {
@@ -33,204 +213,79 @@ function updatePlanBreakdown() {
         monthlyTotal += plan.price;
     });
 
-    // Calculate and display totals for different periods
-    const threeMonthTotal = (monthlyTotal * 3).toFixed(2);
-    const sixMonthTotal = (monthlyTotal * 6).toFixed(2);
-    const nineMonthTotal = (monthlyTotal * 9).toFixed(2);
-    const yearlyTotal = (monthlyTotal * 12).toFixed(2);
-
     monthlyTotalElem.textContent = monthlyTotal.toFixed(2);
-    threeMonthTotalElem.textContent = threeMonthTotal;
-    sixMonthTotalElem.textContent = sixMonthTotal;
-    nineMonthTotalElem.textContent = nineMonthTotal;
-    yearlyTotalElem.textContent = yearlyTotal;
+    threeMonthTotalElem.textContent = (monthlyTotal * 3).toFixed(2);
+    sixMonthTotalElem.textContent = (monthlyTotal * 6).toFixed(2);
+    nineMonthTotalElem.textContent = (monthlyTotal * 9).toFixed(2);
+    yearlyTotalElem.textContent = (monthlyTotal * 12).toFixed(2);
 }
 
-// Fetch services from the API and display
-fetch("http://localhost:3000/api/services")
-    .then((response) => response.json())
-    .then((data) => {
-        data.forEach((service) => {
-            createServiceCard(service);
-        });
-    })
-    .catch((error) => console.error("Error fetching services:", error));
+function initializeStarRatings() {
+    const starRatings = document.querySelectorAll(".star-rating");
 
-// Function to create service cards dynamically
-function createServiceCard(service) {
-    const card = document.createElement("div");
-    card.classList.add("col-md-4", "mb-4");
+    starRatings.forEach(rating => {
+        const stars = rating.querySelectorAll("i");
+        const ratingValueDisplay = rating.nextElementSibling;
 
-    const cardContent = `
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="card-title">${service.name}</h5>
-        ${service.plans
-            .map(
-                (plan) => `
-          <div class="plan mb-3" data-service="${service.name}" data-price="${plan.price}">
-            <button class="btn btn-primary add-plan" data-service="${service.name}" data-plan="${plan.plan}" data-price="${plan.price}">Add</button>
-            ${plan.plan}: <span class="price">$${plan.price}/month</span>
-          </div>`,
-            )
-            .join("")}
-      </div>
-    </div>`;
-    card.innerHTML = cardContent;
-    servicesContainer.appendChild(card);
-}
+        stars.forEach(star => {
+            star.addEventListener("click", () => {
+                const ratingValue = star.getAttribute("data-value");
 
-// Event listener for adding/removing plans
-servicesContainer.addEventListener("click", function (event) {
-    if (event.target.classList.contains("add-plan")) {
-        const planElem = event.target.parentElement;
-        const cardElem = event.target.closest(".card");
-        const planName = cardElem
-            .querySelector(".card-title")
-            .textContent.trim();
-        const planPrice = parseFloat(planElem.dataset.price);
-        const planButton = event.target; // Current clicked button
+                ratingValueDisplay.textContent = `${ratingValue}/5`;
 
-        if (isNaN(planPrice)) {
-            console.error("Invalid price detected.");
-            return;
-        }
+                stars.forEach(s => s.classList.remove("selected"));
 
-        // Check if the plan is already selected (i.e., remove action)
-        if (planButton.classList.contains("active")) {
-            // Plan is being unselected
-            totalPrice -= planPrice;
-            selectedPlans = selectedPlans.filter(
-                (plan) => !(plan.name === planName && plan.price === planPrice),
-            );
-
-            // Update button text and state
-            planButton.textContent = "Add";
-            planButton.classList.remove("active");
-
-            // Re-enable all other buttons for this service
-            const buttonsForService = document.querySelectorAll(
-                `button[data-service='${planName}']`,
-            );
-            buttonsForService.forEach((button) => {
-                button.disabled = false;
-                button.classList.remove("disabled");
-            });
-        } else {
-            // Plan is being selected
-            totalPrice += planPrice;
-            selectedPlans.push({ name: planName, price: planPrice });
-
-            // Update button text and state
-            planButton.textContent = "Remove";
-            planButton.classList.add("active");
-
-            // Disable other buttons for this service
-            const buttonsForService = document.querySelectorAll(
-                `button[data-service='${planName}']`,
-            );
-            buttonsForService.forEach((button) => {
-                if (button !== planButton) {
-                    button.disabled = true;
-                    button.classList.add("disabled");
+                for (let i = 0; i < ratingValue; i++) {
+                    stars[i].classList.add("selected");
                 }
+
+                saveRating(rating.dataset.service, ratingValue);
             });
+        });
+    });
+}
+
+function saveRating(service, rating) {
+    fetch("http://localhost:3000/api/rate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service, rating }),
+    })
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
         }
+        return response.json();
+    })
+    .then((data) => console.log("Rating saved:", data))
+    .catch((error) => console.error("Error saving rating:", error));
+}
 
-        updateTotalPrice();
-    }
-});
 
-// Event listener to open modal
-viewPlanBtn.addEventListener("click", function () {
-    updatePlanBreakdown();
 
-    // Generate the chart if plans are selected
-    if (selectedPlans.length > 0) {
-        generateChart(selectedPlans);
-    }
-
-    modal.style.display = "block";
-});
-
-// Close modal on button click or background click
-closeModal.addEventListener("click", function () {
-    modal.style.display = "none";
-});
-
-window.addEventListener("click", function (event) {
-    if (event.target === modal) {
-        modal.style.display = "none";
-    }
-});
-
-// Add Chart.js for price distribution
-let chartInstance = null;
+// =========================
+// Chart Generation
+// =========================
 
 function generateChart(selectedPlans) {
     const canvas = document.getElementById("planChart");
-    if (!canvas) {
-        console.error("Canvas element not found");
-        return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
-        console.error("Unable to get canvas 2D context");
-        return;
-    }
-
-    const labels = selectedPlans.map((plan) => plan.name);
-    const data = selectedPlans.map((plan) => plan.price);
-
-    // Base colors (preset colors)
-    const baseColors = [
-        "rgb(255, 99, 132)", // Red
-        "rgb(54, 162, 235)", // Blue
-        "rgb(255, 205, 86)", // Yellow
-        "rgb(75, 192, 192)", // Green
-        "rgb(153, 102, 255)", // Purple
-        "rgb(255, 159, 64)", // Orange
-        "rgb(0, 128, 128)", // Teal
-        "rgb(0, 255, 127)", // Spring Green
-        "rgb(255, 69, 0)", // Red-Orange
-        "rgb(106, 90, 205)", // Slate Blue
-    ];
-
-    // Function to generate a random RGB color
-    function getRandomColor() {
-        const r = Math.floor(Math.random() * 255);
-        const g = Math.floor(Math.random() * 255);
-        const b = Math.floor(Math.random() * 255);
-        return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // Generate dynamic colors for all selected plans
-    const dynamicColors = selectedPlans.map((_, index) => {
-        // If we have a predefined color, use it; otherwise, generate a random color
-        return baseColors[index] || getRandomColor();
-    });
+    const labels = selectedPlans.map(plan => plan.name);
+    const data = selectedPlans.map(plan => plan.price);
+    const baseColors = ["rgb(255, 99, 132)", "rgb(54, 162, 235)", "rgb(255, 205, 86)", "rgb(75, 192, 192)", "rgb(153, 102, 255)", "rgb(255, 159, 64)", "rgb(0, 128, 128)", "rgb(0, 255, 127)", "rgb(255, 69, 0)", "rgb(106, 90, 205)"];
+    const dynamicColors = selectedPlans.map((_, index) => baseColors[index] || getRandomColor());
 
     const chartData = {
         labels: labels,
-        datasets: [
-            {
-                label: "Price Distribution",
-                data: data,
-                backgroundColor: dynamicColors, // Assign dynamic or preset colors
-                hoverOffset: 4,
-            },
-        ],
+        datasets: [{ label: "Price Distribution", data: data, backgroundColor: dynamicColors, hoverOffset: 4 }]
     };
 
-    const config = {
-        type: "doughnut",
-        data: chartData,
-    };
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, { type: "doughnut", data: chartData });
+}
 
-    if (chartInstance) {
-        chartInstance.destroy(); // Destroy previous chart to avoid overlap
-    }
-
-    chartInstance = new Chart(ctx, config);
+function getRandomColor() {
+    return `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
 }

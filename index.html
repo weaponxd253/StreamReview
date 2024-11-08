@@ -11,9 +11,44 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+
   </head>
   <body>
+  <!-- Sidebar Toggle Button -->
+<button id="openSidebarBtn" class="open-sidebar-btn" aria-label="Open Sidebar">
+  <i class="fas fa-bars"></i> Menu
+</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+  <button id="closeBtn" class="close-btn" aria-label="Close Sidebar">&times;</button>
+  <a href="#home">Home</a>
+  <a href="#services">Services</a>
+  <a href="#about">About</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- Overlay (hidden by default) -->
+<div id="overlay" class="overlay"></div>
+
+    <div id="sidebar" class="sidebar">
+      <button id="closeBtn" class="close-btn">&times;</button>
+      <a href="#home">Home</a>
+      <a href="#services">Services</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </div>
+  
     <div class="container">
+     
+      <div class="text-right my-3">
+        <button id="darkModeToggle" class="btn btn-secondary">
+          <i class="fas fa-moon"></i> Toggle Dark Mode
+        </button>
+      </div>
+      
       <h1 class="text-center my-4">Streaming Service Pricing</h1>
 
       <!-- Display the total dynamically -->
@@ -89,4 +124,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
   </body>
+  <footer class="disclaimer-footer text-center mt-4">
+    <p class="disclaimer-text">
+      Disclaimer: Prices listed on this site are for informational purposes only. Actual prices may vary. Please check the official provider websites for current pricing and plan details.
+    </p>
+  </footer>
+  
 </html>

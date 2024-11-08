@@ -1,45 +1,155 @@
-/* Body and general layout */
+/* =========================
+   Theme Variables
+========================= */
+
+:root {
+  --background-color: #f8f9fa;
+  --text-color: #333;
+  --card-background-color: #fff;
+  --card-border-color: #ddd;
+  --button-background-color: #007bff;
+  --button-text-color: #fff;
+  --icon-color: #333;
+  --icon-bg-color: #e0e0e0;
+  --list-bg-color: #f8f9fa;
+  --list-text-color: #333;
+}
+
+.dark-mode {
+  --background-color: #121212;
+  --text-color: #e0e0e0;
+  --card-background-color: #1f1f1f;
+  --card-border-color: #444;
+  --button-background-color: #bb86fc;
+  --button-text-color: #000;
+  --icon-color: #f1c40f;
+  --icon-bg-color: #333;
+  --list-bg-color: #333;
+  --list-text-color: #e0e0e0;
+}
+
+/* =========================
+   General Layout & Body
+========================= */
+
 body {
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
   line-height: 1.5;
   margin: 0;
   padding: 0;
-  background-color: #f8f9fa;
+  background-color: var(--background-color);
+  color: var(--text-color);
 }
 
-/* Card layout */
+.disclaimer-footer {
+  padding: 15px;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  font-size: 0.9rem;
+  border-top: 1px solid #ddd;
+}
+
+.dark-mode .disclaimer-footer {
+  background-color: #333;
+  color: #bbb;
+}
+
+/*=========================
+ Tooltip
+=========================*/
+/* Tooltip Container */
+.icon-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.icon-tooltip .tooltip-text {
+  visibility: hidden;
+  width: 120px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 5px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%; /* Position above the icon */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.icon-tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip Arrow */
+.icon-tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* Bottom of the tooltip */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+
+/* =========================
+   Card Styles
+========================= */
+
 .card {
-  border: 1px solid #ddd;
+  border: 1px solid var(--card-border-color);
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--card-background-color);
+  border-color: var(--card-border-color);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Card title styling */
+.card:hover {
+  transform: translateY(-5px) scale(1.02); /* Slight lift and scale */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increase shadow */
+  background-color: var(--card-background-color); /* Optional: lighter or darker background color */
+}
+
+.dark-mode .card:hover {
+  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1); /* Softer shadow in dark mode */
+}
+
 .card-title {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 10px;
 }
 
-/* Plan styling */
 .plan {
   font-size: 1rem;
   font-weight: 400;
   margin-bottom: 8px;
 }
 
-/* Price styling */
 .price {
   color: #28a745;
   font-weight: bold;
 }
 
-/* Add button */
+/* =========================
+   Button Styles
+========================= */
+
 .add-plan {
-  background-color: #007bff;
+  background-color: var(--button-background-color);
+  color: var(--button-text-color);
   border: none;
   padding: 12px 18px;
   font-size: 14px;
@@ -56,7 +166,52 @@ body {
   transform: translateY(-2px);
 }
 
-/* Search bar styling */
+.btn.selected {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+  cursor: default;
+  margin-bottom: 10px;
+}
+
+.btn.selected::after {
+  content: ' ✔';
+  margin-left: 5px;
+  font-weight: bold;
+}
+
+.btn.disabled {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.btn.disabled:hover {
+  background-color: #6c757d;
+}
+
+/* =========================
+   Icon & Toggle Styles
+========================= */
+
+#darkModeToggle i {
+  color: var(--icon-color);
+  background-color: var(--icon-bg-color);
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.btn i {
+  font-size: 1.2rem;
+  margin-right: 5px;
+}
+
+/* =========================
+   Input & Search Bar Styles
+========================= */
+
 #searchBar {
   padding: 12px 15px;
   font-size: 1rem;
@@ -66,7 +221,6 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s ease;
   margin-bottom: 20px;
-  /* Improved spacing */
 }
 
 #searchBar:focus {
@@ -75,7 +229,6 @@ body {
   border-color: #007bff;
 }
 
-/* Dropdown styling */
 select.form-control {
   padding: 10px;
   font-size: 1rem;
@@ -83,29 +236,12 @@ select.form-control {
   border: 1px solid #ddd;
 }
 
-/* Responsive design: Stack cards on small screens */
-@media (max-width: 768px) {
-  .card {
-    width: 100%;
-    margin-bottom: 15px;
-  }
+/* =========================
+   Modal Styles
+========================= */
 
-  .add-plan {
-    width: 100%;
-  }
-
-  /* Modal adjustments for smaller screens */
-  .modal-content {
-    width: 100%;
-    padding: 20px;
-    max-width: none;
-  }
-}
-
-/* Modal container */
 .modal {
   display: none;
-  /* Hidden by default */
   position: fixed;
   z-index: 1;
   left: 0;
@@ -113,64 +249,48 @@ select.form-control {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
-  /* Black background with transparency */
   overflow: hidden;
-  /* Prevent full-page scroll */
 }
 
-/* Modal content */
 .modal-content {
-  background-color: white;
+  background-color: var(--card-background-color);
+  color: var(--text-color);
   margin: 5% auto;
-  /* Center it vertically */
   padding: 20px;
   border: 1px solid #888;
   width: 80%;
-  /* Adjust modal width */
   max-width: 600px;
   max-height: 90vh;
-  /* Set max-height to 90% of the viewport */
   border-radius: 10px;
   overflow-y: auto;
-  /* Allow scrolling for the content */
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-
-
-/* Price highlight */
-#monthlyTotal,
-#threeMonthTotal,
-#sixMonthTotal,
-#nineMonthTotal,
-#yearlyTotal {
-  font-weight: bold;
-  color: #007bff;
+.modal-content h3 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  letter-spacing: 0.5px;
 }
 
-/* Add margin to each list item for better readability */
-#planBreakdown .list-group-item {
-  font-size: 16px;
-  padding: 10px;
-  border: none;
-  background-color: #f8f9fa;
-  margin-bottom: 8px;
-  /* Increased margin for better separation */
-}
-
-/* Adjusting the modal heading */
 .modal-content h5 {
   font-size: 24px;
   margin-bottom: 15px;
 }
 
-/* Adjust the prices and totals to be larger and more prominent */
 .modal-content h6 {
   font-size: 18px;
   margin: 10px 0;
 }
 
-/* Style the close button */
+.modal-content p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #555;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
 .close {
   color: #888;
   float: right;
@@ -184,50 +304,154 @@ select.form-control {
   color: #000;
 }
 
-/* Style for the selected plan button */
-.btn.selected {
-  background-color: #28a745;
-  color: white;
-  border-color: #28a745;
-  cursor: default;
-  margin-bottom: 10px;
-  /* Added spacing */
-}
+/* =========================
+   Highlights & Totals
+========================= */
 
-.btn.selected::after {
-  content: ' ✔';
-  margin-left: 5px;
+#monthlyTotal,
+#threeMonthTotal,
+#sixMonthTotal,
+#nineMonthTotal,
+#yearlyTotal {
   font-weight: bold;
+  color: #007bff;
 }
 
-/* Disabled button styling */
-.btn.disabled {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: white;
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.btn.disabled:hover {
-  color: white;
-  background-color: #6c757d;
-  border-color: #6c757d;
-}
-
-/* Modal Title */
-.modal-content h3 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 15px;
-  letter-spacing: 0.5px;
-}
-
-/* Totals section text */
-.modal-content p {
+#planBreakdown .list-group-item {
   font-size: 16px;
-  font-weight: 500;
-  color: #555;
-  line-height: 1.5;
-  margin: 8px 0;
+  padding: 10px;
+  border: none;
+  background-color: var(--list-bg-color);
+  color: var(--list-text-color);
+  margin-bottom: 8px;
+  border-radius: 5px;
+}
+/* Sidebar styles */
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #333;
+  overflow-x: hidden;
+  transition: width 0.3s ease, opacity 0.3s ease;
+  padding-top: 60px;
+  z-index: 1000;
+  opacity: 0;
+}
+
+.sidebar a {
+  padding: 15px 25px;
+  text-decoration: none;
+  font-size: 18px;
+  color: #fff;
+  display: block;
+  transition: 0.2s;
+}
+
+.sidebar a:hover {
+  background-color: #575757;
+}
+
+.open-sidebar {
+  width: 250px; /* Sidebar's open width */
+  opacity: 1;
+}
+
+.close-btn {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 24px;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Sidebar Toggle Button */
+.open-sidebar-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #333;
+  color: #fff;
+  padding: 10px 15px;
+  font-size: 18px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.3s ease;
+  z-index: 1001;
+}
+
+.open-sidebar-btn i {
+  margin-right: 8px;
+}
+
+/* Hide button when sidebar is open */
+.sidebar-open .open-sidebar-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Overlay styles */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+  z-index: 999;
+}
+
+.overlay-active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Star Rating Styling */
+.star-rating i {
+  font-size: 24px;
+  color: #ddd; /* Default color for unselected stars */
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.star-rating i.selected {
+  color: #ffcc00; /* Yellow color for selected stars */
+}
+
+.rating-value {
+  font-size: 16px;
+  margin-left: 10px;
+  color: #333;
+}
+
+/* =========================
+   Responsive Adjustments
+========================= */
+
+@media (max-width: 768px) {
+  .card {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .add-plan {
+    width: 100%;
+  }
+
+  .modal-content {
+    width: 100%;
+    padding: 20px;
+    max-width: none;
+  }
 }
