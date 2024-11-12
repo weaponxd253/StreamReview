@@ -22,16 +22,19 @@ const openSidebarBtn = document.getElementById("openSidebarBtn");
 const closeBtn = document.getElementById("closeBtn");
 const overlay = document.getElementById("overlay");
 
+
 // =========================
 // Initial Setup on DOMContentLoaded
 // =========================
 document.addEventListener("DOMContentLoaded", () => {
     setupLoginModal();
+    setupSignUpModal();
     setupSidebar();
     setupDarkModeToggle();
     fetchAndDisplayServices();
     setupPlanModal();
 });
+
 
 // =========================
 // Login Modal Functionality
@@ -40,6 +43,7 @@ function setupLoginModal() {
     const loginIconButton = document.getElementById("loginIconButton");
     const loginModal = document.getElementById("loginModal");
     const closeLoginModal = document.getElementById("closeLoginModal");
+    const openSignUpModalBtn = document.getElementById("openSignUpModal");
 
     loginIconButton.addEventListener("click", () => loginModal.style.display = "block");
     closeLoginModal.addEventListener("click", () => loginModal.style.display = "none");
@@ -48,8 +52,16 @@ function setupLoginModal() {
         if (event.target === loginModal) loginModal.style.display = "none";
     });
 
+    // Open Sign Up Modal when clicking on Sign Up button inside Login Modal
+    openSignUpModalBtn.addEventListener("click", () => {
+        loginModal.style.display = "none"; // Close Login modal
+        document.getElementById("signUpModal").style.display = "block"; // Open Sign Up modal
+    });
+
+    // Attach handleLogin to the form's submit event
     document.getElementById("loginForm").addEventListener("submit", handleLogin);
 }
+
 
 function handleLogin(event) {
     event.preventDefault();
@@ -64,26 +76,45 @@ function handleLogin(event) {
     .then((response) => response.json())
     .then((data) => {
         if (data.success) {
+            // Handle successful login
             alert("Login successful");
-            document.getElementById("loginModal").style.display = "none";
-            document.getElementById("sidebarContainer").style.display = "block";
-            openSidebarBtn.style.display = "flex";
-            document.getElementById("loginIconButton").style.display = "none";
+            document.getElementById("loginModal").style.display = "none"; // Close the login modal
+            document.getElementById("sidebarContainer").style.display = "block"; // Show sidebar container
+            document.getElementById("openSidebarBtn").style.display = "flex"; // Show sidebar toggle button
+            document.getElementById("loginIconButton").style.display = "none"; // Hide login button
         } else {
-            alert("Login failed: " + data.message);
+            // Handle login failure
+            alert("Login failed: " + data.message); // Show the failure message
         }
     })
-    .catch((error) => console.error("Error logging in:", error));
+    .catch((error) => {
+        console.error("Error logging in:", error);
+        alert("An error occurred during login. Please try again later.");
+    });
 }
+
+
 
 // =========================
 // Sidebar Functionality
 // =========================
 function setupSidebar() {
+    const openSidebarBtn = document.getElementById("openSidebarBtn");
+    const closeBtn = document.getElementById("closeBtn");
+    const overlay = document.getElementById("overlay");
+    const logoutLink = document.getElementById("logoutLink"); // Select the logout link
+
     openSidebarBtn.addEventListener("click", openSidebar);
     closeBtn.addEventListener("click", closeSidebar);
     overlay.addEventListener("click", closeSidebar);
+
+    // Add event listener for logout
+    logoutLink.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent default anchor behavior
+        handleLogout();
+    });
 }
+
 
 function openSidebar() {
     sidebar.classList.add("open-sidebar");
@@ -322,4 +353,90 @@ function getRandomColor() {
 // =========================
 function sanitizeServiceName(name) {
     return name.replace(/\s+/g, '-').toLowerCase();
+}
+
+// =========================
+// Sign Up Modal Functionality
+// =========================
+function setupSignUpModal() {
+    const signUpModal = document.getElementById("signUpModal");
+    const closeSignUpModal = document.getElementById("closeSignUpModal");
+    const backToLoginButton = document.getElementById("backToLoginButton");
+
+    closeSignUpModal.addEventListener("click", () => signUpModal.style.display = "none");
+
+    window.addEventListener("click", (event) => {
+        if (event.target === signUpModal) signUpModal.style.display = "none";
+    });
+
+    // Back to Login functionality
+    backToLoginButton.addEventListener("click", () => {
+        signUpModal.style.display = "none";
+        document.getElementById("loginModal").style.display = "block"; // Show Login modal
+    });
+
+    // Add event listener for form submission
+    document.getElementById("signUpForm").addEventListener("submit", handleSignUp);
+
+    // Validate passwords match
+    const passwordInput = document.getElementById("newPassword");
+    const confirmPasswordInput = document.getElementById("confirmPassword");
+    const passwordMismatchMessage = document.getElementById("passwordMismatch");
+
+    confirmPasswordInput.addEventListener("input", () => {
+        if (confirmPasswordInput.value !== passwordInput.value) {
+            passwordMismatchMessage.style.display = "block";
+        } else {
+            passwordMismatchMessage.style.display = "none";
+        }
+    });
+}
+
+function handleSignUp(event) {
+    event.preventDefault();
+    const username = document.getElementById("newUsername").value;
+    const password = document.getElementById("newPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const birthdate = document.getElementById("birthdate").value; // Optional birthdate
+
+    // Check if passwords match
+    if (password !== confirmPassword) {
+        alert("Passwords do not match. Please try again.");
+        return;
+    }
+
+    // Send sign-up data to server
+    fetch("http://localhost:3000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, birthdate })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.success) {
+            alert("Sign-up successful! You can now log in.");
+            document.getElementById("signUpModal").style.display = "none";
+        } else {
+            alert("Sign-up failed: " + data.message);
+        }
+    })
+    .catch((error) => console.error("Error signing up:", error));
+}
+
+function handleLogout() {
+    // Hide the sidebar and overlay
+    document.getElementById("sidebarContainer").style.display = "none";
+    document.getElementById("overlay").classList.remove("overlay-active");
+
+    // Hide the sidebar toggle button
+    document.getElementById("openSidebarBtn").style.display = "none";
+
+    // Show the login button
+    document.getElementById("loginIconButton").style.display = "flex";
+
+    // Optionally clear session or token data
+    // Example: localStorage.removeItem("authToken"); if using tokens
+    localStorage.removeItem("authToken"); // Clear any authentication token
+
+    alert("You have been logged out.");
 }

@@ -328,17 +328,17 @@ select.form-control {
 }
 /* Sidebar styles */
 .sidebar {
-  height: 100%;
-  width: 0;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: #333;
-  overflow-x: hidden;
-  transition: width 0.3s ease, opacity 0.3s ease;
-  padding-top: 60px;
-  z-index: 1000;
-  opacity: 0;
+    height: 100%;
+    width: 0; /* Sidebar starts closed */
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: #333;
+    overflow-x: hidden;
+    transition: width 0.3s ease, opacity 0.3s ease;
+    padding-top: 60px;
+    z-index: 1002; /* Higher than overlay to be on top */
+    opacity: 0;
 }
 
 .sidebar a {
@@ -409,7 +409,7 @@ select.form-control {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease;
-  z-index: 999;
+  z-index: 1001; /* Just below the sidebar */
 }
 
 .overlay-active {
@@ -456,12 +456,7 @@ select.form-control {
   }
 }
 
-/* Ensure the login modal appears above the overlay */
-#loginModal {
-  position: fixed;
-  z-index: 1002; /* Above the overlay */
-  display: none;
-}
+
 
 .overlay {
   z-index: 1001; /* Just below the modal */
@@ -478,12 +473,8 @@ select.form-control {
   z-index: 1000;
 }
 
-#loginIconButton {
-  background-color: transparent;
-  border: none;
-  color: var(--icon-color);
-  font-size: 24px;
-  cursor: pointer;
+#sidebarContainer {
+  display: none; /* Initially hidden */
 }
 
 #openSidebarBtn {
@@ -503,4 +494,88 @@ select.form-control {
 .dark-mode #openSidebarBtn i {
   color: var(--icon-color);
 }
+
+/* Refined Button Styles */
+#loginModal .btn-success,
+#signUpModal .btn-primary {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 5px;
+    width: 100%; /* Full width for balance */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-top: 10px;
+}
+
+/* Center Icon and Text in Buttons */
+#loginModal .btn-success i,
+#signUpModal .btn-primary i {
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+/* Consistent Modal Button Styling */
+#loginModal .btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+#signUpModal .btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+
+/* Sign Up Link Styling in Login Modal */
+#loginModal #openSignUpModal {
+    background-color: transparent;
+    color: #28a745;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    text-align: center;
+    width: 100%;
+    display: block;
+    margin-top: 15px;
+}
+
+#loginModal #openSignUpModal i {
+    margin-right: 5px;
+}
+
+/* Hover Effects for Better UX */
+#loginModal .btn-success:hover {
+    background-color: #218838;
+}
+
+#signUpModal .btn-primary:hover {
+    background-color: #0069d9;
+}
+
+#loginModal #openSignUpModal:hover {
+    color: #1e7e34;
+}
+
+/* Adjust Modal Text Alignment and Padding */
+.modal-content h3 {
+    text-align: center;
+    font-size: 1.8rem;
+    color: inherit;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+#passwordMismatch {
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+
+
+
+
+
 

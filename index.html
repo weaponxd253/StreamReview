@@ -1,5 +1,6 @@
-<!doctype html>
+<!doctype html> 
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -30,31 +31,63 @@
             <a href="customService">View Custom Services</a>
             <a href="#services">View Saved Plans</a>
             <a href="#account">Account Settings</a>
-            <a href="#logout">Logout</a>
+            <a href="#logout" id="logoutLink">Logout</a>
         </div>
     </div>
 
     <!-- Overlay for Sidebar -->
     <div id="overlay" class="overlay"></div>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close" id="closeLoginModal">&times;</span>
-            <h3>Login</h3>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" id="username" class="form-control" required />
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" class="form-control" required />
-                </div>
-                <button type="submit" class="btn btn-success">Login</button>
-            </form>
-        </div>
+<!-- Login Modal -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeLoginModal">&times;</span>
+        <h3>Login</h3>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-success">Login</button>
+        </form>
+        <button id="openSignUpModal" class="btn btn-secondary mt-3">Don't have an account? Sign Up</button>
     </div>
+</div>
+
+
+<!-- Sign Up Modal -->
+<div id="signUpModal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="closeSignUpModal">&times;</span>
+        <h3>Sign Up</h3>
+        <form id="signUpForm">
+            <div class="form-group">
+                <label for="newUsername">Username</label>
+                <input type="text" id="newUsername" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="newPassword">Password</label>
+                <input type="password" id="newPassword" class="form-control" required />
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" class="form-control" required />
+                <small id="passwordMismatch" class="text-danger" style="display: none;">Passwords do not match</small>
+            </div>
+            <div class="form-group">
+                <label for="birthdate">Birthdate (Optional)</label>
+                <input type="date" id="birthdate" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+            <button type="button" id="backToLoginButton" class="btn btn-secondary mt-3">Back to Login</button>
+        </form>
+    </div>
+</div>
+
 
     <!-- Main Container -->
     <div class="container">
@@ -71,9 +104,7 @@
         <!-- Total Price and Custom Plan Button -->
         <div id="totalContainer" class="text-center mb-4">
             <h2>Total: $<span id="totalPrice">0.00</span></h2>
-            <button id="viewPlanBtn" class="btn btn-success">
-                View Custom Plan
-            </button>
+            <button id="viewPlanBtn" class="btn btn-success">View Custom Plan</button>
         </div>
 
         <!-- Sort and Filter Options -->
@@ -128,4 +159,5 @@
         Disclaimer: Prices listed on this site are for informational purposes only. Actual prices may vary. Please check the official provider websites for current pricing and plan details.
     </p>
 </footer>
+
 </html>
