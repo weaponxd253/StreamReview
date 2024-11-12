@@ -455,3 +455,52 @@ select.form-control {
     max-width: none;
   }
 }
+
+/* Ensure the login modal appears above the overlay */
+#loginModal {
+  position: fixed;
+  z-index: 1002; /* Above the overlay */
+  display: none;
+}
+
+.overlay {
+  z-index: 1001; /* Just below the modal */
+}
+
+/* Header button styling */
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+#loginIconButton {
+  background-color: transparent;
+  border: none;
+  color: var(--icon-color);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+#openSidebarBtn {
+  background-color: #333;
+  color: #fff;
+  padding: 10px 15px;
+  font-size: 18px;
+  border: none;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  display: none; /* Initially hidden */
+}
+
+/* Optional: Dark mode adjustments */
+.dark-mode #loginIconButton i,
+.dark-mode #openSidebarBtn i {
+  color: var(--icon-color);
+}
+

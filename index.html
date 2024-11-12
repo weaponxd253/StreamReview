@@ -1,133 +1,131 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Streaming Service Pricing</title>
 
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
+    <!-- External CSS and Font Libraries -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
 
-
-  </head>
-  <body>
-  <!-- Sidebar Toggle Button -->
-<button id="openSidebarBtn" class="open-sidebar-btn" aria-label="Open Sidebar">
-  <i class="fas fa-bars"></i> Menu
-</button>
-
-<!-- Sidebar -->
-<div id="sidebar" class="sidebar">
-  <button id="closeBtn" class="close-btn" aria-label="Close Sidebar">&times;</button>
-  <a href="#home">Home</a>
-  <a href="#services">Services</a>
-  <a href="#about">About</a>
-  <a href="#contact">Contact</a>
-</div>
-
-<!-- Overlay (hidden by default) -->
-<div id="overlay" class="overlay"></div>
-
-    <div id="sidebar" class="sidebar">
-      <button id="closeBtn" class="close-btn">&times;</button>
-      <a href="#home">Home</a>
-      <a href="#services">Services</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
+<body>
+    <!-- Header Buttons -->
+    <div class="header-buttons">
+        <button id="loginIconButton" class="btn">
+            <i class="fas fa-user"></i>
+        </button>
+        <button id="openSidebarBtn" class="open-sidebar-btn" aria-label="Open Sidebar" style="display: none;">
+            <i class="fas fa-bars"></i> Menu
+        </button>
     </div>
-  
+
+    <!-- Sidebar -->
+    <div id="sidebarContainer" style="display: none;">
+        <div id="sidebar" class="sidebar">
+            <button id="closeBtn" class="close-btn" aria-label="Close Sidebar">&times;</button>
+            <a href="#home">Dashboard</a>
+            <a href="customService">View Custom Services</a>
+            <a href="#services">View Saved Plans</a>
+            <a href="#account">Account Settings</a>
+            <a href="#logout">Logout</a>
+        </div>
+    </div>
+
+    <!-- Overlay for Sidebar -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeLoginModal">&times;</span>
+            <h3>Login</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" required />
+                </div>
+                <button type="submit" class="btn btn-success">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Container -->
     <div class="container">
-     
-      <div class="text-right my-3">
-        <button id="darkModeToggle" class="btn btn-secondary">
-          <i class="fas fa-moon"></i> Toggle Dark Mode
-        </button>
-      </div>
-      
-      <h1 class="text-center my-4">Streaming Service Pricing</h1>
-
-      <!-- Display the total dynamically -->
-      <div id="totalContainer" class="text-center mb-4">
-        <h2>Total: $<span id="totalPrice">0.00</span></h2>
-        <button id="viewPlanBtn" class="btn btn-success">
-          View Custom Plan
-        </button>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col-md-6 mb-3">
-          <select id="sortOptions" class="form-control">
-            <option value="default">Sort by</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
-          </select>
+        <!-- Dark Mode Toggle -->
+        <div class="text-right my-3">
+            <button id="darkModeToggle" class="btn btn-secondary">
+                <i class="fas fa-moon"></i> Toggle Dark Mode
+            </button>
         </div>
 
-        <div class="col-md-6 mb-3">
-          <select id="filterOptions" class="form-control">
-            <option value="all">Filter by Service</option>
-            <!-- Filter options can dynamically populate as well in the future if needed -->
-          </select>
+        <!-- Main Heading -->
+        <h1 class="text-center my-4">Streaming Service Pricing</h1>
+
+        <!-- Total Price and Custom Plan Button -->
+        <div id="totalContainer" class="text-center mb-4">
+            <h2>Total: $<span id="totalPrice">0.00</span></h2>
+            <button id="viewPlanBtn" class="btn btn-success">
+                View Custom Plan
+            </button>
         </div>
 
-        <div class="col-md-12">
-          <input
-            type="text"
-            id="searchBar"
-            class="form-control"
-            placeholder="Search services..."
-          />
+        <!-- Sort and Filter Options -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <select id="sortOptions" class="form-control">
+                    <option value="default">Sort by</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <select id="filterOptions" class="form-control">
+                    <option value="all">Filter by Service</option>
+                </select>
+            </div>
+            <div class="col-md-12">
+                <input type="text" id="searchBar" class="form-control" placeholder="Search services..." />
+            </div>
         </div>
-      </div>
 
-      <!-- Cards for streaming services will be loaded dynamically here -->
-      <div id="servicesContainer" class="row">
-        <!-- Dynamic cards will be inserted here via JavaScript -->
-      </div>
+        <!-- Services Container for Dynamic Content -->
+        <div id="servicesContainer" class="row"></div>
 
-    <!-- Custom Modal -->
-    <div id="planModal" class="modal">
-      <div class="modal-content">
-        <span class="close">&times;</span>
-        <h5>Your Custom Plan</h5>
-        <h6>Breakdown by Month:</h6>
-        <ul id="planBreakdown" class="list-group">
-
-
-
-          <!-- Plan breakdown will be inserted here dynamically -->
-        </ul>
-        <hr />
-        <h6>Total Monthly Price: $<span id="monthlyTotal">0.00</span></h6>
-        <h6>
-          Total Price After 3 Months: $<span id="threeMonthTotal">0.00</span>
-        </h6>
-        <h6>
-          Total Price After 6 Months: $<span id="sixMonthTotal">0.00</span>
-        </h6>
-        <h6>
-          Total Price After 9 Months: $<span id="nineMonthTotal">0.00</span>
-        </h6>
-        <h6>Total Price After One Year: $<span id="yearlyTotal">0.00</span></h6>
-
-        <h5>Price Distribution:</h5>
-        <canvas id="planChart" width="400" height="400"></canvas>
-        
-      </div>
+        <!-- Plan Modal for Viewing Custom Plans -->
+        <div id="planModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h5>Your Custom Plan</h5>
+                <h6>Breakdown by Month:</h6>
+                <ul id="planBreakdown" class="list-group"></ul>
+                <hr />
+                <h6>Total Monthly Price: $<span id="monthlyTotal">0.00</span></h6>
+                <h6>Total Price After 3 Months: $<span id="threeMonthTotal">0.00</span></h6>
+                <h6>Total Price After 6 Months: $<span id="sixMonthTotal">0.00</span></h6>
+                <h6>Total Price After 9 Months: $<span id="nineMonthTotal">0.00</span></h6>
+                <h6>Total Price After One Year: $<span id="yearlyTotal">0.00</span></h6>
+                <h5>Price Distribution:</h5>
+                <canvas id="planChart" width="400" height="400"></canvas>
+            </div>
+        </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
-  </body>
-  <footer class="disclaimer-footer text-center mt-4">
+</body>
+
+<!-- Footer Disclaimer -->
+<footer class="disclaimer-footer text-center mt-4">
     <p class="disclaimer-text">
-      Disclaimer: Prices listed on this site are for informational purposes only. Actual prices may vary. Please check the official provider websites for current pricing and plan details.
+        Disclaimer: Prices listed on this site are for informational purposes only. Actual prices may vary. Please check the official provider websites for current pricing and plan details.
     </p>
-  </footer>
-  
+</footer>
 </html>
