@@ -609,6 +609,28 @@ select.form-control {
   margin-top: 5px;
 }
 
+/* =========================
+ Password Strength Meter
+========================= */
+
+/* Password Strength Meter Styles */
+.strength-meter {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.strength-meter.weak {
+  color: #dc3545; /* Red for weak */
+}
+
+.strength-meter.medium {
+  color: #ffc107; /* Yellow for medium */
+}
+
+.strength-meter.strong {
+  color: #28a745; /* Green for strong */
+}
 
 
 

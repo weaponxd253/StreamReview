@@ -21,6 +21,8 @@ const sidebar = document.getElementById("sidebar");
 const openSidebarBtn = document.getElementById("openSidebarBtn");
 const closeBtn = document.getElementById("closeBtn");
 const overlay = document.getElementById("overlay");
+const newPasswordInput = document.getElementById("newPassword");
+const passwordStrengthDisplay = document.getElementById("passwordStrength");
 
 
 // =========================
@@ -412,11 +414,18 @@ function handleSignUp(event) {
     const username = document.getElementById("newUsername").value;
     const password = document.getElementById("newPassword").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
-    const birthdate = document.getElementById("birthdate").value; // Optional birthdate
+    const birthdate = document.getElementById("birthdate").value;
 
     // Check if passwords match
     if (password !== confirmPassword) {
         alert("Passwords do not match. Please try again.");
+        return;
+    }
+
+    // Check password strength
+    const strength = evaluatePasswordStrength(password);
+    if (strength === "weak") {
+        alert("Password strength is too weak. Please choose a stronger password.");
         return;
     }
 
@@ -429,14 +438,15 @@ function handleSignUp(event) {
     .then((response) => response.json())
     .then((data) => {
         if (data.success) {
-            alert("Sign-up successful! You can now log in.");
+            showToast("Sign-up successful! You can now log in.", "success");
             document.getElementById("signUpModal").style.display = "none";
         } else {
-            alert("Sign-up failed: " + data.message);
+            showToast("Sign-up failed: " + data.message, "error");
         }
     })
     .catch((error) => console.error("Error signing up:", error));
 }
+
 
 function handleLogout() {
     // Hide the sidebar and overlay
@@ -454,4 +464,29 @@ function handleLogout() {
 
     // Show a success notification for logout
     showToast("You have been logged out successfully", "success");
+}
+
+// =========================
+// Password Strength Evaluation
+// =========================
+newPasswordInput.addEventListener("input", () => {
+    const strength = evaluatePasswordStrength(newPasswordInput.value);
+    displayPasswordStrength(strength);
+});
+
+function evaluatePasswordStrength(password) {
+    let strengthScore = 0;
+    if (password.length >= 8) strengthScore++;
+    if (/[A-Z]/.test(password)) strengthScore++;
+    if (/[0-9]/.test(password)) strengthScore++;
+    if (/[^A-Za-z0-9]/.test(password)) strengthScore++;
+
+    if (strengthScore <= 1) return "weak";
+    if (strengthScore === 2) return "medium";
+    if (strengthScore >= 3) return "strong";
+}
+
+function displayPasswordStrength(strength) {
+    passwordStrengthDisplay.textContent = `Strength: ${strength}`;
+    passwordStrengthDisplay.className = `strength-meter ${strength}`;
 }
