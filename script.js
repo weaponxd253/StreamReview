@@ -39,6 +39,35 @@ document.addEventListener("DOMContentLoaded", () => {
 // =========================
 // Login Modal Functionality
 // =========================
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.success) {
+            showToast("Login successful", "success");
+            document.getElementById("loginModal").style.display = "none";
+            document.getElementById("sidebarContainer").style.display = "block";
+            document.getElementById("openSidebarBtn").style.display = "flex";
+            document.getElementById("loginIconButton").style.display = "none";
+        } else {
+            showToast("Login failed: " + data.message, "error");
+        }
+    })
+    .catch((error) => {
+        console.error("Error logging in:", error);
+        showToast("An error occurred during login. Please try again later.", "error");
+    });
+}
+
+
 function setupLoginModal() {
     const loginIconButton = document.getElementById("loginIconButton");
     const loginModal = document.getElementById("loginModal");
@@ -63,35 +92,21 @@ function setupLoginModal() {
 }
 
 
-function handleLogin(event) {
-    event.preventDefault();
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+// =========================
+// Toast Notification Function
+// =========================
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    const toastMessage = document.getElementById("toastMessage");
 
-    fetch("http://localhost:3000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.success) {
-            // Handle successful login
-            alert("Login successful");
-            document.getElementById("loginModal").style.display = "none"; // Close the login modal
-            document.getElementById("sidebarContainer").style.display = "block"; // Show sidebar container
-            document.getElementById("openSidebarBtn").style.display = "flex"; // Show sidebar toggle button
-            document.getElementById("loginIconButton").style.display = "none"; // Hide login button
-        } else {
-            // Handle login failure
-            alert("Login failed: " + data.message); // Show the failure message
-        }
-    })
-    .catch((error) => {
-        console.error("Error logging in:", error);
-        alert("An error occurred during login. Please try again later.");
-    });
+    toastMessage.textContent = message;
+    toast.className = `toast show ${type}`;
+
+    setTimeout(() => {
+        toast.className = "toast"; // Remove the show class to hide
+    }, 3000); // Toast disappears after 3 seconds
 }
+
 
 
 
@@ -431,12 +446,12 @@ function handleLogout() {
     // Hide the sidebar toggle button
     document.getElementById("openSidebarBtn").style.display = "none";
 
-    // Show the login button
+    // Show the login button again
     document.getElementById("loginIconButton").style.display = "flex";
 
     // Optionally clear session or token data
-    // Example: localStorage.removeItem("authToken"); if using tokens
-    localStorage.removeItem("authToken"); // Clear any authentication token
+    localStorage.removeItem("authToken"); // Example: clear any stored authentication token
 
-    alert("You have been logged out.");
+    // Show a success notification for logout
+    showToast("You have been logged out successfully", "success");
 }

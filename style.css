@@ -489,6 +489,42 @@ select.form-control {
   display: none; /* Initially hidden */
 }
 
+
+/* =========================
+   Login Style
+========================= */
+
+/* Toast Notification Styles */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #333;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(100px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.toast.success {
+  background-color: #28a745;
+}
+
+.toast.error {
+  background-color: #dc3545;
+}
+
+
 /* Optional: Dark mode adjustments */
 .dark-mode #loginIconButton i,
 .dark-mode #openSidebarBtn i {
@@ -572,6 +608,7 @@ select.form-control {
   font-size: 0.9rem;
   margin-top: 5px;
 }
+
 
 
 
