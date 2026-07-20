@@ -1,11 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   const subscriptionsKey = "userSubscriptions";
+  const {
+    calculatePriceComparison,
+    getBestTwelveMonthProjection,
+    normalizeDuration,
+  } = window.StreamReviewPriceUtils;
 
   const providers = [
     {
       id: "playstation",
-      name: "PlayStation Network",
-      planPrefix: "PlayStation",
+      name: "PlayStation Plus",
+      planPrefix: "PlayStation Plus",
       iconClass: "fa-brands fa-playstation",
       buttonId: "ps",
       collapseId: "collapsePS",
@@ -25,9 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ["Cloud Storage", "100 GB for your game saves."],
           ],
           plans: [
-            { id: "ps-essential-monthly", label: "Monthly", price: 9.99, duration: "Monthly", legacyNames: ["PlayStation Essential - 1 Month"] },
-            { id: "ps-essential-3-months", label: "3 Months", price: 24.99, duration: "3 Months" },
-            { id: "ps-essential-yearly", label: "Yearly", price: 59.99, duration: "Yearly" },
+            { id: "ps-essential-monthly", label: "Monthly", price: 10.99, duration: "Monthly", legacyNames: ["PlayStation Essential - Monthly", "PlayStation Essential - 1 Month"] },
+            { id: "ps-essential-3-months", label: "3 Months", price: 27.99, duration: "3 Months" },
+            { id: "ps-essential-yearly", label: "Yearly", price: 79.99, duration: "Yearly" },
           ],
         },
         {
@@ -36,13 +41,13 @@ document.addEventListener("DOMContentLoaded", () => {
           detailTitle: "PlayStation Plus Extra",
           detailIntro: "Building upon the Essential tier, the Extra plan offers additional perks:",
           detailItems: [
-            ["Game Catalog", "Access up to 400 PS4 and PS5 games."],
+            ["Game Catalog", "Access the PlayStation Plus Game Catalog."],
             ["Ubisoft+ Classics", "A curated selection of Ubisoft titles."],
           ],
           plans: [
-            { id: "ps-extra-monthly", label: "Monthly", price: 14.99, duration: "Monthly", legacyNames: ["PlayStation Extra - 1 Month"] },
-            { id: "ps-extra-3-months", label: "3 Months", price: 39.99, duration: "3 Months" },
-            { id: "ps-extra-yearly", label: "Yearly", price: 99.99, duration: "Yearly" },
+            { id: "ps-extra-monthly", label: "Monthly", price: 16.99, duration: "Monthly", legacyNames: ["PlayStation Extra - Monthly", "PlayStation Extra - 1 Month"] },
+            { id: "ps-extra-3-months", label: "3 Months", price: 43.99, duration: "3 Months" },
+            { id: "ps-extra-yearly", label: "Yearly", price: 134.99, duration: "Yearly" },
           ],
         },
         {
@@ -56,9 +61,9 @@ document.addEventListener("DOMContentLoaded", () => {
             ["Cloud Streaming", "Play on PS4, PS5, or PC."],
           ],
           plans: [
-            { id: "ps-premium-monthly", label: "Monthly", price: 17.99, duration: "Monthly", legacyNames: ["PlayStation Premium - 1 Month"] },
-            { id: "ps-premium-3-months", label: "3 Months", price: 49.99, duration: "3 Months" },
-            { id: "ps-premium-yearly", label: "Yearly", price: 119.99, duration: "Yearly" },
+            { id: "ps-premium-monthly", label: "Monthly", price: 19.99, duration: "Monthly", legacyNames: ["PlayStation Premium - Monthly", "PlayStation Premium - 1 Month"] },
+            { id: "ps-premium-3-months", label: "3 Months", price: 54.99, duration: "3 Months" },
+            { id: "ps-premium-yearly", label: "Yearly", price: 159.99, duration: "Yearly" },
           ],
         },
       ],
@@ -75,18 +80,18 @@ document.addEventListener("DOMContentLoaded", () => {
       questionClass: "xboxQuestion",
       tiers: [
         {
-          id: "xbox-core",
-          name: "Game Pass Core",
-          detailTitle: "Xbox Game Pass Core",
-          detailIntro: "Core includes the essentials for console multiplayer and a smaller game library:",
+          id: "xbox-essential",
+          name: "Game Pass Essential",
+          detailTitle: "Xbox Game Pass Essential",
+          detailIntro: "Essential covers console, PC, and cloud access with online console multiplayer:",
           detailItems: [
-            ["Online Console Multiplayer", "Play supported multiplayer games online."],
-            ["Game Catalog", "Access a rotating selection of console games."],
-            ["Member Deals", "Discounts and promotions on selected titles."],
+            ["Platform Coverage", "Console, PC, and cloud."],
+            ["Online Console Multiplayer", "Included for supported games."],
+            ["Intro Offer", "$1 for the first month for eligible accounts; renews at the regular price."],
           ],
           plans: [
-            { id: "xbox-core-monthly", label: "Monthly", price: 9.99, duration: "Monthly" },
-            { id: "xbox-core-yearly", label: "Yearly", price: 74.99, duration: "Yearly" },
+            { id: "xbox-essential-monthly", label: "Monthly", price: 9.99, duration: "Monthly", legacyNames: ["Xbox Game Pass Core - Monthly"] },
+            { id: "xbox-essential-3-months", label: "3 Months", price: 24.99, duration: "3 Months", legacyNames: ["Xbox Game Pass Core - Yearly"] },
           ],
         },
         {
@@ -95,48 +100,50 @@ document.addEventListener("DOMContentLoaded", () => {
           detailTitle: "Xbox Game Pass PC",
           detailIntro: "PC Game Pass focuses on Windows gaming access:",
           detailItems: [
-            ["PC Game Library", "Access a rotating catalog of PC titles."],
-            ["New Releases", "Includes selected first-party games on release day."],
-            ["Member Perks", "Offers and discounts for PC players."],
+            ["Platform Coverage", "Windows PC."],
+            ["Day-One PC Games", "Includes day-one PC games."],
+            ["EA Play", "Included with PC Game Pass."],
+            ["Intro Offer", "$1 for 14 days for eligible accounts; renews at the regular price."],
           ],
           plans: [
-            { id: "xbox-pc-monthly", label: "Monthly", price: 14.99, duration: "Monthly" },
+            { id: "xbox-pc-monthly", label: "Monthly", price: 13.99, duration: "Monthly" },
           ],
         },
         {
-          id: "xbox-standard",
-          name: "Game Pass Standard",
-          detailTitle: "Xbox Game Pass Standard",
-          detailIntro: "Standard combines console catalog access with online console multiplayer:",
+          id: "xbox-premium",
+          name: "Game Pass Premium",
+          detailTitle: "Xbox Game Pass Premium",
+          detailIntro: "Premium covers console, PC, and cloud at the regular monthly price:",
           detailItems: [
-            ["Console Game Library", "Browse a rotating library of console games."],
-            ["Online Multiplayer", "Play supported online console multiplayer."],
-            ["Member Deals", "Discounts on selected games and add-ons."],
+            ["Platform Coverage", "Console, PC, and cloud."],
+            ["Game Catalog", "Access the Premium Game Pass library."],
+            ["Intro Offer", "$1 for 14 days for eligible accounts; renews at the regular price."],
           ],
           plans: [
-            { id: "xbox-standard-monthly", label: "Monthly", price: 14.99, duration: "Monthly" },
+            { id: "xbox-premium-monthly", label: "Monthly", price: 14.99, duration: "Monthly", legacyNames: ["Xbox Game Pass Standard - Monthly"] },
           ],
         },
         {
           id: "xbox-ultimate",
           name: "Game Pass Ultimate",
           detailTitle: "Xbox Game Pass Ultimate",
-          detailIntro: "Ultimate is the broadest Xbox Game Pass tier:",
+          detailIntro: "Ultimate is the largest Xbox Game Pass benefit package:",
           detailItems: [
-            ["Console, PC, and Cloud", "Access supported games across multiple ways to play."],
-            ["Online Multiplayer", "Includes console multiplayer access."],
-            ["Extra Perks", "Includes member rewards, discounts, and partner perks."],
+            ["Platform Coverage", "Console, PC, and cloud."],
+            ["Day-One Releases", "Includes day-one releases."],
+            ["Included Benefits", "Cloud gaming, EA Play, Fortnite Crew, and Ubisoft+ Classics."],
+            ["Intro Offer", "No general introductory offer shown."],
           ],
           plans: [
-            { id: "xbox-ultimate-monthly", label: "Monthly", price: 19.99, duration: "Monthly" },
+            { id: "xbox-ultimate-monthly", label: "Monthly", price: 22.99, duration: "Monthly" },
           ],
         },
       ],
     },
     {
       id: "nintendo",
-      name: "Nintendo Online",
-      planPrefix: "Nintendo",
+      name: "Nintendo Switch Online",
+      planPrefix: "Nintendo Switch Online",
       iconClass: "fa-solid fa-gamepad",
       buttonId: "nintendo",
       collapseId: "collapseNintendo",
@@ -146,24 +153,25 @@ document.addEventListener("DOMContentLoaded", () => {
       tiers: [
         {
           id: "nintendo-switch-online",
-          name: "Switch Online",
-          detailTitle: "Nintendo Switch Online",
-          detailIntro: "Switch Online covers core Nintendo online features:",
+          name: "Standard Individual",
+          detailTitle: "Nintendo Switch Online Standard Individual",
+          detailIntro: "The standard individual membership covers core Nintendo Switch Online features:",
           detailItems: [
             ["Online Play", "Play compatible Nintendo Switch games online."],
             ["Classic Games", "Access selected classic game libraries."],
             ["Cloud Saves", "Back up supported save data online."],
+            ["Trial", "Nintendo offers a seven-day trial of the standard individual membership."],
           ],
           plans: [
-            { id: "nintendo-switch-monthly", label: "Monthly", price: 3.99, duration: "Monthly", legacyNames: ["Nintendo Switch Online - 1 Month"] },
+            { id: "nintendo-switch-monthly", label: "Monthly", price: 3.99, duration: "Monthly", legacyNames: ["Nintendo Switch Online - Monthly", "Nintendo Switch Online - 1 Month"] },
             { id: "nintendo-switch-3-months", label: "3 Months", price: 7.99, duration: "3 Months" },
             { id: "nintendo-switch-yearly", label: "Yearly", price: 19.99, duration: "Yearly" },
           ],
         },
         {
           id: "nintendo-family",
-          name: "Family Membership",
-          detailTitle: "Nintendo Family Membership",
+          name: "Standard Family",
+          detailTitle: "Nintendo Switch Online Standard Family",
           detailIntro: "Family Membership extends Nintendo Switch Online access across multiple accounts:",
           detailItems: [
             ["Shared Access", "Supports up to 8 Nintendo Accounts."],
@@ -171,22 +179,35 @@ document.addEventListener("DOMContentLoaded", () => {
             ["Classic Games and Cloud Saves", "Includes core Switch Online benefits."],
           ],
           plans: [
-            { id: "nintendo-family-monthly", label: "Monthly", price: 34.99, duration: "Monthly" },
+            { id: "nintendo-family-yearly", label: "Yearly", price: 34.99, duration: "Yearly", legacyNames: ["Nintendo Family Membership - Monthly"] },
           ],
         },
         {
-          id: "nintendo-expansion",
-          name: "Expansion Pack",
-          detailTitle: "Nintendo Switch Online + Expansion Pack",
-          detailIntro: "Expansion Pack includes Switch Online benefits plus extra libraries and add-on content:",
+          id: "nintendo-expansion-individual",
+          name: "Expansion Pack Individual",
+          detailTitle: "Nintendo Switch Online + Expansion Pack Individual",
+          detailIntro: "Expansion Pack is offered as a 12-month membership with expanded benefits:",
           detailItems: [
-            ["Expanded Classics", "Access additional classic game catalogs."],
-            ["DLC Access", "Includes selected add-on content while subscribed."],
-            ["Family Option", "A higher-priced plan supports up to 8 accounts."],
+            ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
+            ["Availability", "Offered as a 12-month membership."],
+            ["Bonus Month", "An eligible 12-month Expansion Pack purchase or redemption can receive an additional bonus month through July 28, 2026; separate activation required."],
           ],
           plans: [
-            { id: "nintendo-expansion-yearly", label: "Yearly", price: 49.99, duration: "Yearly" },
-            { id: "nintendo-expansion-family-yearly", label: "Yearly (Up to 8 accounts)", price: 79.99, duration: "Yearly" },
+            { id: "nintendo-expansion-yearly", label: "Yearly", price: 49.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly"] },
+          ],
+        },
+        {
+          id: "nintendo-expansion-family",
+          name: "Expansion Pack Family",
+          detailTitle: "Nintendo Switch Online + Expansion Pack Family",
+          detailIntro: "Expansion Pack Family covers up to eight Nintendo Accounts with expanded benefits:",
+          detailItems: [
+            ["Family Coverage", "Covers up to eight Nintendo Accounts."],
+            ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
+            ["Bonus Month", "An eligible 12-month Expansion Pack purchase or redemption can receive an additional bonus month through July 28, 2026; separate activation required."],
+          ],
+          plans: [
+            { id: "nintendo-expansion-family-yearly", label: "Yearly", price: 79.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly (Up to 8 accounts)"] },
           ],
         },
       ],
@@ -583,7 +604,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const heading = document.createElement("h6");
     const headingText = document.createElement("strong");
-    headingText.textContent = "Price Breakdown";
+    headingText.textContent = "Selected Subscriptions";
     heading.appendChild(headingText);
 
     const totalSubscriptions = document.createElement("p");
@@ -632,35 +653,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return item;
   }
 
-  function calculatePriceComparison(subscriptionPlans) {
-    return subscriptionPlans.map((plan) => {
-      const baseCost = Number.parseFloat(plan.price);
-      const isMonthly = plan.duration === "Monthly" || plan.duration === "1 Month";
-      const isThreeMonth = plan.duration === "3 Months";
-      const isYearly = plan.duration === "Yearly";
-
-      const costFor3Months = isMonthly
-        ? (baseCost * 3).toFixed(2)
-        : isThreeMonth
-        ? baseCost.toFixed(2)
-        : "N/A";
-      const costForYearly = isMonthly
-        ? (baseCost * 12).toFixed(2)
-        : isThreeMonth
-        ? (baseCost * 4).toFixed(2)
-        : isYearly
-        ? baseCost.toFixed(2)
-        : "N/A";
-
-      return {
-        name: plan.plan,
-        monthlyCost: isMonthly ? `$${baseCost.toFixed(2)}` : "N/A",
-        threeMonthCost: costFor3Months !== "N/A" ? `$${costFor3Months}` : "N/A",
-        yearlyCost: costForYearly !== "N/A" ? `$${costForYearly}` : "N/A",
-      };
-    });
-  }
-
   function displayPriceComparison(subscriptionPlans) {
     const comparisonData = calculatePriceComparison(subscriptionPlans);
     const breakdownContainer = document.getElementById("priceBreakdown");
@@ -675,17 +667,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Plan", "Month-to-Month", "3-Month Subscription", "Yearly Subscription"].forEach((label) => {
+    ["Plan", "Monthly Cost", "3-Month Cost", "12-Month Cost"].forEach((label) => {
       const th = document.createElement("th");
       th.textContent = label;
       headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
 
-    const minYearlyCost = comparisonData.reduce((minimum, data) => {
-      const yearlyCost = Number.parseFloat(data.yearlyCost.replace("$", ""));
-      return Number.isFinite(yearlyCost) ? Math.min(minimum, yearlyCost) : minimum;
-    }, Infinity);
+    const lowestTwelveMonth = getBestTwelveMonthProjection(comparisonData);
 
     const tbody = document.createElement("tbody");
     comparisonData.forEach((data) => {
@@ -694,21 +683,24 @@ document.addEventListener("DOMContentLoaded", () => {
       appendCell(row, data.monthlyCost, data.monthlyCost === "N/A" ? "na" : "");
       appendCell(row, data.threeMonthCost, data.threeMonthCost === "N/A" ? "na" : "");
 
-      const yearlyCost = Number.parseFloat(data.yearlyCost.replace("$", ""));
-      const yearlyClass = yearlyCost === minYearlyCost ? "best-value" : data.yearlyCost === "N/A" ? "na" : "";
-      appendCell(row, data.yearlyCost, yearlyClass);
+      const twelveMonthClass = lowestTwelveMonth && data.twelveMonthValue === lowestTwelveMonth.twelveMonthValue
+        ? "best-value"
+        : data.twelveMonthCost === "N/A"
+        ? "na"
+        : "";
+      appendCell(row, data.twelveMonthCost, twelveMonthClass);
       tbody.appendChild(row);
     });
 
     table.append(thead, tbody);
     breakdownContainer.appendChild(table);
 
-    if (comparisonData.some((data) => data.yearlyCost !== "N/A")) {
+    if (lowestTwelveMonth) {
       const savingsHighlight = document.createElement("div");
       savingsHighlight.className = "savings-highlight text-center mt-3";
       const savingsText = document.createElement("p");
       const strong = document.createElement("strong");
-      strong.textContent = "Save money by opting for longer-term subscriptions!";
+      strong.textContent = `Lowest 12-month projection: ${lowestTwelveMonth.name} at ${lowestTwelveMonth.twelveMonthCost}`;
       savingsText.appendChild(strong);
       savingsHighlight.appendChild(savingsText);
       breakdownContainer.appendChild(savingsHighlight);
@@ -807,10 +799,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getTierPricing(tier) {
     return tier.plans.map((plan) => `${plan.label}: $${formatPrice(plan.price)}`).join(" | ");
-  }
-
-  function normalizeDuration(duration) {
-    return duration === "1 Month" ? "Monthly" : duration;
   }
 
   function normalizeKey(value) {

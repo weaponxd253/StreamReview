@@ -1,0 +1,120 @@
+const assert = require("node:assert/strict");
+const {
+  calculatePriceComparison,
+  formatCurrency,
+  getBestTwelveMonthProjection,
+  getProjectedCosts,
+  normalizeDuration,
+  parseCurrency,
+} = require("../price-utils");
+
+function test(name, fn) {
+  try {
+    fn();
+    console.log(`ok - ${name}`);
+  } catch (error) {
+    console.error(`not ok - ${name}`);
+    throw error;
+  }
+}
+
+test("normalizes old 1 Month duration", () => {
+  assert.equal(normalizeDuration("1 Month"), "Monthly");
+  assert.equal(normalizeDuration("3 Months"), "3 Months");
+});
+
+test("parses and formats currency", () => {
+  assert.equal(parseCurrency("$10.99"), 10.99);
+  assert.equal(parseCurrency("27.99"), 27.99);
+  assert.equal(formatCurrency(10.99), "$10.99");
+});
+
+test("projects monthly subscriptions", () => {
+  const costs = getProjectedCosts({ price: "10.99", duration: "Monthly" });
+
+  assert.deepEqual(costs, {
+    monthly: 10.99,
+    threeMonth: 32.97,
+    twelveMonth: 131.88,
+  });
+});
+
+test("projects 3-month subscriptions", () => {
+  const costs = getProjectedCosts({ price: "27.99", duration: "3 Months" });
+
+  assert.deepEqual(costs, {
+    monthly: null,
+    threeMonth: 27.99,
+    twelveMonth: 111.96,
+  });
+});
+
+test("projects yearly subscriptions", () => {
+  const costs = getProjectedCosts({ price: "79.99", duration: "Yearly" });
+
+  assert.deepEqual(costs, {
+    monthly: null,
+    threeMonth: null,
+    twelveMonth: 79.99,
+  });
+});
+
+test("formats comparison rows", () => {
+  const comparison = calculatePriceComparison([
+    { plan: "PlayStation Plus Essential - Monthly", price: "10.99", duration: "Monthly" },
+    { plan: "PlayStation Plus Essential - 3 Months", price: "27.99", duration: "3 Months" },
+    { plan: "PlayStation Plus Essential - Yearly", price: "79.99", duration: "Yearly" },
+  ]);
+
+  assert.deepEqual(comparison, [
+    {
+      name: "PlayStation Plus Essential - Monthly",
+      monthlyCost: "$10.99",
+      threeMonthCost: "$32.97",
+      twelveMonthCost: "$131.88",
+      twelveMonthValue: 131.88,
+    },
+    {
+      name: "PlayStation Plus Essential - 3 Months",
+      monthlyCost: "N/A",
+      threeMonthCost: "$27.99",
+      twelveMonthCost: "$111.96",
+      twelveMonthValue: 111.96,
+    },
+    {
+      name: "PlayStation Plus Essential - Yearly",
+      monthlyCost: "N/A",
+      threeMonthCost: "N/A",
+      twelveMonthCost: "$79.99",
+      twelveMonthValue: 79.99,
+    },
+  ]);
+});
+
+test("best value requires at least two valid 12-month projections", () => {
+  assert.equal(
+    getBestTwelveMonthProjection([
+      {
+        name: "Only Plan",
+        twelveMonthCost: "$79.99",
+        twelveMonthValue: 79.99,
+      },
+    ]),
+    null
+  );
+
+  const best = getBestTwelveMonthProjection([
+    {
+      name: "Monthly Projection",
+      twelveMonthCost: "$131.88",
+      twelveMonthValue: 131.88,
+    },
+    {
+      name: "Yearly Plan",
+      twelveMonthCost: "$79.99",
+      twelveMonthValue: 79.99,
+    },
+  ]);
+
+  assert.equal(best.name, "Yearly Plan");
+});
