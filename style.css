@@ -1,640 +1,372 @@
-/* =========================
-   Theme Variables
-========================= */
-
 :root {
-  --background-color: #f8f9fa;
-  --text-color: #333;
-  --card-background-color: #fff;
-  --card-border-color: #ddd;
-  --button-background-color: #007bff;
-  --button-text-color: #fff;
-  --icon-color: #333;
-  --icon-bg-color: #e0e0e0;
-  --list-bg-color: #f8f9fa;
-  --list-text-color: #333;
+    --ps-dark: darkblue;
+    --ps-light: lightblue;
+    --xbox-dark: darkgreen;
+    --xbox-light: lightgreen;
+    --nintendo-dark: darkred;
+    --nintendo-light: #fb566c;
 }
-
-.dark-mode {
-  --background-color: #121212;
-  --text-color: #e0e0e0;
-  --card-background-color: #1f1f1f;
-  --card-border-color: #444;
-  --button-background-color: #bb86fc;
-  --button-text-color: #000;
-  --icon-color: #f1c40f;
-  --icon-bg-color: #333;
-  --list-bg-color: #333;
-  --list-text-color: #e0e0e0;
-}
-
-/* =========================
-   General Layout & Body
-========================= */
 
 body {
-  font-family: 'Roboto', sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 0;
-  padding: 0;
-  background-color: var(--background-color);
-  color: var(--text-color);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: grey;
 }
 
-.disclaimer-footer {
-  padding: 15px;
-  background-color: #f8f9fa;
-  color: #6c757d;
-  font-size: 0.9rem;
-  border-top: 1px solid #ddd;
+.collapse {
+  max-height: 60vh; /* Limit the height of the collapsible sections */
+  overflow-y: auto; /* Enable scrolling within collapsible sections */
 }
 
-.dark-mode .disclaimer-footer {
-  background-color: #333;
-  color: #bbb;
+.btn {
+    width: 100%;
+    height: 50px;
+    padding: 10px;
+    margin: 5px 0;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 1.5s;
 }
 
-/*=========================
- Tooltip
-=========================*/
-/* Tooltip Container */
-.icon-tooltip {
-  position: relative;
-  display: inline-block;
+#ps {
+    background-color: var(--ps-dark);
+}
+#ps:hover {
+    background-color: var(--ps-light);
 }
 
-.icon-tooltip .tooltip-text {
-  visibility: hidden;
-  width: 120px;
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  border-radius: 5px;
-  padding: 5px;
-  position: absolute;
-  z-index: 1;
-  bottom: 125%; /* Position above the icon */
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s;
-  font-size: 0.85rem;
-  white-space: nowrap;
+#xbox {
+    background-color: var(--xbox-dark);
+}
+#xbox:hover {
+    background-color: var(--xbox-light);
 }
 
-.icon-tooltip:hover .tooltip-text {
-  visibility: visible;
-  opacity: 1;
+#nintendo {
+    background-color: var(--nintendo-dark);
+}
+#nintendo:hover {
+    background-color: var(--nintendo-light);
 }
 
-/* Tooltip Arrow */
-.icon-tooltip .tooltip-text::after {
-  content: "";
-  position: absolute;
-  top: 100%; /* Bottom of the tooltip */
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 5px;
-  border-style: solid;
-  border-color: #333 transparent transparent transparent;
+.psSubheader {
+    background-color: var(--ps-light);
+    color: var(--ps-dark);
 }
 
-
-/* =========================
-   Card Styles
-========================= */
-
-.card {
-  border: 1px solid var(--card-border-color);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  background-color: var(--card-background-color);
-  border-color: var(--card-border-color);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.psHeader {
+   color: white;
+    background-color: var(--ps-dark);
+    font-weight: bold;
 }
 
-.card:hover {
-  transform: translateY(-5px) scale(1.02); /* Slight lift and scale */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increase shadow */
-  background-color: var(--card-background-color); /* Optional: lighter or darker background color */
+.xboxSubheader {
+    background-color: var(--xbox-light);
+    color: var(--xbox-dark);
 }
 
-.dark-mode .card:hover {
-  box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1); /* Softer shadow in dark mode */
+.xboxHeader {
+    color: white;
+    background-color: var(--xbox-dark);
+    font-weight: bold;
 }
 
-.card-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 10px;
+.nintendoHeader {
+    background-color: var(--nintendo-dark);
+    color: white;
+    font-weight: bold;
 }
 
-.plan {
-  font-size: 1rem;
-  font-weight: 400;
-  margin-bottom: 8px;
+.nintendoSubHeader {
+    background-color: var(--nintendo-light);
+    color: #8c0316;
 }
 
-.price {
-  color: #28a745;
-  font-weight: bold;
-}
-
-/* =========================
-   Button Styles
-========================= */
-
-.add-plan {
-  background-color: var(--button-background-color);
-  color: var(--button-text-color);
-  border: none;
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: uppercase;
-  border-radius: 5px;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-  margin-bottom: 10px;
-  display: block;
-}
-
-.add-plan:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
-}
-
-.btn.selected {
-  background-color: #28a745;
-  color: white;
-  border-color: #28a745;
-  cursor: default;
-  margin-bottom: 10px;
-}
-
-.btn.selected::after {
-  content: ' ✔';
-  margin-left: 5px;
-  font-weight: bold;
-}
-
-.btn.disabled {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: white;
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.btn.disabled:hover {
-  background-color: #6c757d;
-}
-
-/* =========================
-   Icon & Toggle Styles
-========================= */
-
-#darkModeToggle i {
-  color: var(--icon-color);
-  background-color: var(--icon-bg-color);
-  padding: 5px;
-  border-radius: 50%;
-}
-
-.btn i {
-  font-size: 1.2rem;
-  margin-right: 5px;
-}
-
-/* =========================
-   Input & Search Bar Styles
-========================= */
-
-#searchBar {
-  padding: 12px 15px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  width: 100%;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-  margin-bottom: 20px;
-}
-
-#searchBar:focus {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  outline: none;
-  border-color: #007bff;
-}
-
-select.form-control {
-  padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-
-/* =========================
-   Modal Styles
-========================= */
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-}
-
-.modal-content {
-  background-color: var(--card-background-color);
-  color: var(--text-color);
-  margin: 5% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 600px;
-  max-height: 90vh;
-  border-radius: 10px;
-  overflow-y: auto;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.modal-content h3 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 15px;
-  letter-spacing: 0.5px;
-}
-
-.modal-content h5 {
-  font-size: 24px;
-  margin-bottom: 15px;
-}
-
-.modal-content h6 {
-  font-size: 18px;
-  margin: 10px 0;
-}
-
-.modal-content p {
-  font-size: 16px;
-  font-weight: 500;
-  color: #555;
-  line-height: 1.5;
-  margin: 8px 0;
-}
-
-.close {
-  color: #888;
-  float: right;
-  font-size: 24px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.close:hover {
-  color: #000;
-}
-
-/* =========================
-   Highlights & Totals
-========================= */
-
-#monthlyTotal,
-#threeMonthTotal,
-#sixMonthTotal,
-#nineMonthTotal,
-#yearlyTotal {
-  font-weight: bold;
-  color: #007bff;
-}
-
-#planBreakdown .list-group-item {
-  font-size: 16px;
-  padding: 10px;
-  border: none;
-  background-color: var(--list-bg-color);
-  color: var(--list-text-color);
-  margin-bottom: 8px;
-  border-radius: 5px;
-}
-/* Sidebar styles */
-.sidebar {
-    height: 100%;
-    width: 0; /* Sidebar starts closed */
-    position: fixed;
-    top: 0;
-    left: 0;
-    background-color: #333;
-    overflow-x: hidden;
-    transition: width 0.3s ease, opacity 0.3s ease;
-    padding-top: 60px;
-    z-index: 1002; /* Higher than overlay to be on top */
-    opacity: 0;
-}
-
-.sidebar a {
-  padding: 15px 25px;
-  text-decoration: none;
-  font-size: 18px;
-  color: #fff;
-  display: block;
-  transition: 0.2s;
-}
-
-.sidebar a:hover {
-  background-color: #575757;
-}
-
-.open-sidebar {
-  width: 250px; /* Sidebar's open width */
-  opacity: 1;
-}
-
-.close-btn {
-  position: absolute;
-  top: 20px;
-  right: 25px;
-  font-size: 24px;
-  color: #fff;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-/* Sidebar Toggle Button */
-.open-sidebar-btn {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background-color: #333;
-  color: #fff;
-  padding: 10px 15px;
-  font-size: 18px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.3s ease;
-  z-index: 1001;
-}
-
-.open-sidebar-btn i {
-  margin-right: 8px;
-}
-
-/* Hide button when sidebar is open */
-.sidebar-open .open-sidebar-btn {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Overlay styles */
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease;
-  z-index: 1001; /* Just below the sidebar */
-}
-
-.overlay-active {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* Star Rating Styling */
-.star-rating i {
-  font-size: 24px;
-  color: #ddd; /* Default color for unselected stars */
-  cursor: pointer;
+.add-subscription {
+  margin-left: 10px; /* Space between price and icon */
+  cursor: pointer; /* Pointer cursor for clickable icon */
   transition: color 0.2s;
 }
 
-.star-rating i.selected {
-  color: #ffcc00; /* Yellow color for selected stars */
+
+
+.xboxSubheader .add-subscription{
+  color: green;
 }
 
-.rating-value {
-  font-size: 16px;
-  margin-left: 10px;
-  color: #333;
+.xboxSubheader .add-subscription:hover{
+  color: #0E590E;
 }
 
-/* =========================
-   Responsive Adjustments
-========================= */
+.nintendoSubHeader .add-subscription{
+  color: var(--nintendo-dark);
+}
 
-@media (max-width: 768px) {
-  .card {
-    width: 100%;
-    margin-bottom: 15px;
-  }
+.nintendoSubHeader .add-subscription:hover{
+  color: var(--nintendo-lght);
+}
 
-  .add-plan {
-    width: 100%;
-  }
-
-  .modal-content {
-    width: 100%;
-    padding: 20px;
-    max-width: none;
-  }
+#subscriptionList {
+  margin-top: 10px;
+  max-height: 200px; 
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #f9f9f9;
 }
 
 
-
-.overlay {
-  z-index: 1001; /* Just below the modal */
-}
-
-/* Header button styling */
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  z-index: 1000;
-}
-
-#sidebarContainer {
-  display: none; /* Initially hidden */
-}
-
-#openSidebarBtn {
-  background-color: #333;
-  color: #fff;
-  padding: 10px 15px;
-  font-size: 18px;
-  border: none;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  display: none; /* Initially hidden */
-}
-
-
-/* =========================
-   Login Style
-========================= */
-
-/* Toast Notification Styles */
 .toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background-color: #333;
-  color: white;
+  display: flex;
+  align-items: center;
   padding: 10px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(100px);
-  transition: opacity 0.4s, transform 0.4s;
+  margin-bottom: 10px;
+  background-color: #4caf50; /* Default green background */
+  color: white;
+  border-radius: 5px;
+  font-size: 14px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.5s ease, fadeOut 0.5s ease 2.5s; /* Total 3s */
 }
 
-.toast.show {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+.toast.toast-error {
+  background-color: #f44336; /* Red background for errors */
 }
 
-.toast.success {
-  background-color: #28a745;
+.toast .close {
+  margin-left: 15px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-.toast.error {
-  background-color: #dc3545;
+.subscriptions-container {
+  max-width: 400px;
+  margin: 20px auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  background-color: white;
 }
 
-
-/* Optional: Dark mode adjustments */
-.dark-mode #loginIconButton i,
-.dark-mode #openSidebarBtn i {
-  color: var(--icon-color);
+.card-header {
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
 }
 
-/* Refined Button Styles */
-#loginModal .btn-success,
-#signUpModal .btn-primary {
-    padding: 10px 20px;
-    font-size: 16px;
-    font-weight: 600;
-    border-radius: 5px;
-    width: 100%; /* Full width for balance */
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    margin-top: 10px;
+.list-group-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  padding: 15px;
 }
 
-/* Center Icon and Text in Buttons */
-#loginModal .btn-success i,
-#signUpModal .btn-primary i {
-    margin-right: 8px;
-    font-size: 18px;
+.list-group-item:last-child {
+  border-bottom: 0;
 }
 
-/* Consistent Modal Button Styling */
-#loginModal .btn-success {
-    background-color: #28a745;
-    border: none;
+.btn-danger {
+  padding: 5px 10px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-#signUpModal .btn-primary {
-    background-color: #007bff;
-    border: none;
+.btn-danger i {
+  font-size: 16px;
 }
 
-/* Sign Up Link Styling in Login Modal */
-#loginModal #openSignUpModal {
-    background-color: transparent;
-    color: #28a745;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    text-align: center;
-    width: 100%;
-    display: block;
-    margin-top: 15px;
+.text-muted {
+  color: #888;
 }
 
-#loginModal #openSignUpModal i {
-    margin-right: 5px;
+#subscriptionList {
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-/* Hover Effects for Better UX */
-#loginModal .btn-success:hover {
-    background-color: #218838;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-#signUpModal .btn-primary:hover {
-    background-color: #0069d9;
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 
-#loginModal #openSignUpModal:hover {
-    color: #1e7e34;
+.subscription-item {
+  animation-duration: 0.4s;
+  animation-timing-function: ease-in-out;
 }
 
-/* Adjust Modal Text Alignment and Padding */
-.modal-content h3 {
-    text-align: center;
-    font-size: 1.8rem;
-    color: inherit;
-    font-weight: bold;
-    margin-bottom: 15px;
+.subscription-added {
+  animation-name: fadeIn;
 }
 
-#passwordMismatch {
-  font-size: 0.9rem;
-  margin-top: 5px;
+.subscription-removed {
+  animation-name: fadeOut;
 }
 
-/* =========================
- Password Strength Meter
-========================= */
+.psSubheader .icon-minus {
+  color: #898A00;
+}
 
-/* Password Strength Meter Styles */
-.strength-meter {
-  margin-top: 5px;
-  font-size: 0.9rem;
+.psSubheader .icon-minus:hover {
+  color: #444400;
+}
+
+.psSubheader .icon-plus {
+  color: var(--ps-dark);;
+}
+
+.xboxSubheader .icon-minus{
+  color: #EE90EE;
+}
+
+.xboxSubheader .icon-minus:hover{
+  color: #DE28DE;
+}
+
+.nintendoSubHeader .icon-minus{
+  color: #56FCE6;
+}
+
+.nintendoSubHeader .icon-minus:hover{
+  color: #03A08B;
+}
+.price-breakdown {
+  background-color: #f8f9fa; /* Light gray background */
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.price-breakdown h6 {
+  margin-bottom: 10px;
+  font-size: 16px;
   font-weight: bold;
 }
 
-.strength-meter.weak {
-  color: #dc3545; /* Red for weak */
+.price-breakdown p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
-.strength-meter.medium {
-  color: #ffc107; /* Yellow for medium */
+.summary-list {
+  margin-top: 10px;
+  padding-left: 0; /* Remove default list padding */
 }
 
-.strength-meter.strong {
-  color: #28a745; /* Green for strong */
+.summary-list .list-group-item {
+  background-color: transparent;
+  border: none;
+  padding: 5px 0; /* Reduce padding for smaller list items */
+  font-size: 14px;
+  text-align: left; /* Align text for readability */
+}
+
+/* General table styles */
+.table {
+  margin: 20px auto;
+  width: 90%;
+  border-collapse: collapse;
+  text-align: center; /* Center-align content */
+  font-size: 14px;
+}
+
+.table th, .table td {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+}
+
+.table th {
+  background-color: #f8f9fa; /* Light gray background for headers */
+  color: #333;
+  font-weight: bold;
+}
+
+/* Alternating row colors */
+.table tbody tr:nth-child(even) {
+  background-color: #f9f9f9; /* Light gray for even rows */
+}
+
+.table tbody tr:nth-child(odd) {
+  background-color: #ffffff; /* White for odd rows */
+}
+
+/* N/A values styling */
+.table .na {
+  color: #aaa; /* Gray color for unavailable data */
+  font-style: italic;
+}
+
+/* Highlight best value */
+.table .best-value {
+  background-color: #d4edda; /* Light green background */
+  color: #155724; /* Dark green text */
+  font-weight: bold;
+}
+
+/* Mobile-friendly table */
+@media (max-width: 768px) {
+  .table {
+    display: block; /* Make table scrollable on small screens */
+    overflow-x: auto;
+    white-space: nowrap; /* Prevent content from wrapping */
+  }
 }
 
 
+.savings-highlight {
+  background-color: #f0fff4;
+  color: #28a745;
+  padding: 10px;
+  border: 1px solid #28a745;
+  border-radius: 5px;
+}
+
+.breakdown-container {
+  border: 1px solid #ddd;
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+.breakdown-container h5 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.selected-subscription {
+    background-color: #d4edda !important; /* Light green */
+    border: 2px solid #28a745 !important; /* Dark green */
+    font-weight: bold;
+}
 
 
-
-
-
+.psQuestion:hover{
+  color: var(--ps-light);;
+}

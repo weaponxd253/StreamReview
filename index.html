@@ -1,170 +1,250 @@
-<!doctype html> 
-<html lang="en">
+<div class="jumbotron">
 
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Streaming Service Pricing</title>
-
-    <!-- External CSS and Font Libraries -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-</head>
-
-<body>
-
-    <!-- Toast Notification -->
-<div id="toast" class="toast">
-    <span id="toastMessage"></span>
 </div>
 
-    <!-- Header Buttons -->
-    <div class="header-buttons">
-        <button id="loginIconButton" class="btn">
-            <i class="fas fa-user"></i>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
+  <div class="offcanvas-header">
+    <h5 id="offcanvasTitle"></h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body" id="offcanvasContent">
+    <!-- Dynamic content goes here -->
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    <div class="row">
+      <div class="col">
+
+
+        <button class="btn btn-primary" id="ps" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePS" aria-expanded="false" aria-controls="collapsePS"><i class=" ml-2 fa-brands fa-playstation"></i>
+          Playstation Network
         </button>
-        <button id="openSidebarBtn" class="open-sidebar-btn" aria-label="Open Sidebar" style="display: none;">
-            <i class="fas fa-bars"></i> Menu
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <div class="collapse multi-collapse" id="collapsePS">
+          <ul id="psList" class="list-group list-group-flush">
+            <li class="list-group-item psHeader">
+  Essential 
+  <i class="fa-solid fa-circle-question psQuestion" 
+     data-bs-toggle="offcanvas" 
+     data-bs-target="#descriptionOffcanvas" 
+     data-plan="essential">
+  </i>
+</li>
+            <ul class="list-group list-group">
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">1 Month</div>
+                <i class="fa-solid fa-dollar-sign"></i> 9.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Essential - 1 Month" data-price="9.99" data-duration="1 Month" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">3 Months</div>
+                <i class="fa-solid fa-dollar-sign"></i> 24.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Essential - 3 Months" data-price="24.99" data-duration="3 Months" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">Yearly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 59.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Essential - Yearly" data-price="59.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+            </ul>
+           <li class="list-group-item psHeader">
+  Extra 
+  <i class="fa-solid fa-circle-question psQuestion" 
+     data-bs-toggle="offcanvas" 
+     data-bs-target="#descriptionOffcanvas" 
+     data-plan="extra">
+  </i>
+</li>
+            <ul class="list-group list-group">
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">1 Month</div>
+                <i class="fa-solid fa-dollar-sign"></i> 14.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Extra - 1 Month" data-price="14.99" data-duration="1 Month" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">3 Months</div>
+                <i class="fa-solid fa-dollar-sign"></i> 39.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Extra - 3 Months" data-price="39.99" data-duration="3 Months" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">Yearly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 99.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Extra - Yearly" data-price="99.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+            </ul>
+           <li class="list-group-item psHeader">
+  Premium 
+  <i class="fa-solid fa-circle-question psQuestion" 
+     data-bs-toggle="offcanvas" 
+     data-bs-target="#descriptionOffcanvas" 
+     data-plan="premium">
+  </i>
+</li>
+            <ul class="list-group list-group">
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">1 Month</div>
+                <i class="fa-solid fa-dollar-sign"></i> 17.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Premium - 1 Month" data-price="17.99" data-duration="1 Month" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">3 Months</div>
+                <i class="fa-solid fa-dollar-sign"></i> 49.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Premium - 3 Months" data-price="49.99" data-duration="3 Months" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item psSubheader">
+                <div class="fw-bold">Yearly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 119.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="PlayStation Premium - Yearly" data-price="119.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+            </ul>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div class="col">
+    <div class="row">
+      <div class="col">
+        <button class="btn btn-primary" id="xbox" type="button" data-bs-toggle="collapse" data-bs-target="#collapseXbox" aria-expanded="false" aria-controls="collapseXbox"><i class="m-2 fa-brands fa-xbox"></i>
+          Xbox Game Pass
         </button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="collapse multi-collapse" id="collapseXbox">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item xboxHeader">Game Pass Core <i class="fa-solid fa-circle-question xboxQuestion"></i></li>
+          <ul class="list-group list-group">
+            <li class="list-group-item xboxSubheader">
+              <div class="fw-bold">Monthly</div>
+              <i class="fa-solid fa-dollar-sign"></i> 9.99
+              <i class="fa-solid fa-square-plus add-subscription" data-plan="Xbox Game Pass Core - Monthly" data-price="9.99" data-duration="1 Month" title="Add Subscription"></i>
+            </li>
+            <li class="list-group-item xboxSubheader">
+              <div class="fw-bold">Yearly</div>
+              <i class="fa-solid fa-dollar-sign"></i> 74.99
+              <i class="fa-solid fa-square-plus add-subscription" data-plan="Xbox Game Pass Core - Yearly" data-price="74.99" data-duration="Yearly" title="Add Subscription"></i>
+            </li>
+          </ul>
+
+          <li class="list-group-item xboxHeader">Game Pass PC <i class="fa-solid fa-circle-question xboxQuestion"></i></li>
+          <ul class="list-group list-group">
+            <li class="list-group-item xboxSubheader">
+              <div class="fw-bold">Monthly</div>
+              <i class="fa-solid fa-dollar-sign"></i> 14.99
+              <i class="fa-solid fa-square-plus add-subscription" data-plan="Xbox Game Pass PC - Monthly" data-price="14.99" data-duration="1 Month" title="Add Subscription"></i>
+            </li>
+          </ul>
+
+          <li class="list-group-item xboxHeader">Game Pass Standard <i class="fa-solid fa-circle-question xboxQuestion"></i></li>
+          <ul class="list-group list-group">
+            <li class="list-group-item xboxSubheader">
+              <div class="fw-bold">Monthly</div>
+              <i class="fa-solid fa-dollar-sign"></i> 14.99
+              <i class="fa-solid fa-square-plus add-subscription" data-plan="Xbox Game Pass Standard - Monthly" data-price="14.99" data-duration="1 Month" title="Add Subscription"></i>
+            </li>
+          </ul>
+
+          <li class="list-group-item xboxHeader">Game Pass Ultimate <i class="fa-solid fa-circle-question xboxQuestion"></i></li>
+          <ul class="list-group list-group">
+            <li class="list-group-item xboxSubheader">
+              <div class="fw-bold">Monthly</div>
+              <i class="fa-solid fa-dollar-sign"></i> 19.99
+              <i class="fa-solid fa-square-plus add-subscription" data-plan="Xbox Game Pass Ultimate - Monthly" data-price="19.99" data-duration="1 Month" title="Add Subscription"></i>
+            </li>
+          </ul>
+
+        </ul>
+      </div>
     </div>
 
-    <!-- Sidebar -->
-    <div id="sidebarContainer" style="display: none;">
-        <div id="sidebar" class="sidebar">
-            <button id="closeBtn" class="close-btn" aria-label="Close Sidebar">&times;</button>
-            <a href="#home">Dashboard</a>
-            <a href="customService">View Custom Services</a>
-            <a href="#services">View Saved Plans</a>
-            <a href="#account">Account Settings</a>
-            <a href="#logout" id="logoutLink">Logout</a>
-        </div>
+  </div>
+  <div class="col">
+    <div class="row">
+      <div class="col">
+        <button class="btn btn-primary" id="nintendo" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNintendo" aria-expanded="false" aria-controls="collapseNintendo"><i class="m-2 fa-solid fa-gamepad"></i>
+          Nintento Online
+        </button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="collapse multi-collapse" id="collapseNintendo">
+        <ul class="list-group list-group-flush">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item nintendoHeader">Switch Online <i class="fa-solid fa-circle-question nintendoQuestion"></i></li>
+            <ul class="list-group list-group">
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">1 Month</div>
+                <i class="fa-solid fa-dollar-sign"></i> 3.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Switch Online - 1 Month" data-price="3.99" data-duration="1 Month" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">3 Months</div>
+                <i class="fa-solid fa-dollar-sign"></i> 7.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Switch Online - 3 Months" data-price="7.99" data-duration="3 Months" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">Yearly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 19.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Switch Online - Yearly" data-price="19.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+            </ul>
+            <li class="list-group-item nintendoHeader">Family Membership <i class="fa-solid fa-circle-question nintendoQuestion"></i></li>
+            <ul class="list-group list-group">
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">Monthly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 34.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Family Membership - Monthly" data-price="34.99" data-duration="Monthly" title="Add Subscription"></i>
+              </li>
+            </ul>
+            <li class="list-group-item nintendoHeader">Expansion Pack <i class="fa-solid fa-circle-question nintendoQuestion"></i></li>
+            <ul class="list-group list-group">
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">Yearly</div>
+                <i class="fa-solid fa-dollar-sign"></i> 49.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Expansion Pack - Yearly" data-price="49.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+              <li class="list-group-item nintendoSubHeader">
+                <div class="fw-bold">Yearly (Up to 8 accounts)</div>
+                <i class="fa-solid fa-dollar-sign"></i> 79.99
+                <i class="fa-solid fa-square-plus add-subscription" data-plan="Nintendo Expansion Pack - Yearly (Up to 8 accounts)" data-price="79.99" data-duration="Yearly" title="Add Subscription"></i>
+              </li>
+            </ul>
+          </ul>
+        </ul>
+      </div>
     </div>
 
-    <!-- Overlay for Sidebar -->
-    <div id="overlay" class="overlay"></div>
+  </div>
+</div>
 
-<!-- Login Modal -->
-<div id="loginModal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="closeLoginModal">&times;</span>
-        <h3>Login</h3>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" class="form-control" required />
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" class="form-control" required />
-            </div>
-            <button type="submit" class="btn btn-success">Login</button>
-        </form>
-        <button id="openSignUpModal" class="btn btn-secondary mt-3">Don't have an account? Sign Up</button>
-    </div>
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer">
+  <!-- Toasts will be dynamically added here -->
+</div>
+
+<div class="row mt-4">
+  <div class="col">
+    <div class="subscriptions-container card">
+  <h5 class="card-header">Your Current Subscriptions</h5>
+  <div class="card-body">
+    <ul id="subscriptionList" class="list-group">
+      <!-- Dynamically populated list -->
+    </ul>
+  </div>
+  <div id="emptyState" class="text-muted text-center py-3" style="display: none;">
+    No subscriptions added yet.
+  </div>
+</div>
+    <div id="priceBreakdown" class="price-breakdown-container mt-4">
+  <!-- Price breakdown will be dynamically generated here -->
 </div>
 
 
-<!-- Sign Up Modal -->
-<div id="signUpModal" class="modal">
-    <div class="modal-content">
-        <span class="close" id="closeSignUpModal">&times;</span>
-        <h3>Sign Up</h3>
-        <form id="signUpForm">
-            <div class="form-group">
-                <label for="newUsername">Username</label>
-                <input type="text" id="newUsername" class="form-control" required />
-            </div>
-            <div class="form-group">
-                <label for="newPassword">Password</label>
-                <input type="password" id="newPassword" class="form-control" required />
-                <div id="passwordStrength" class="strength-meter"></div>
-            </div>
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" class="form-control" required />
-                <small id="passwordMismatch" class="text-danger" style="display: none;">Passwords do not match</small>
-            </div>
-            <div class="form-group">
-                <label for="birthdate">Birthdate (Optional)</label>
-                <input type="date" id="birthdate" class="form-control" />
-            </div>
-            <button type="submit" class="btn btn-primary">Sign Up</button>
-            <button type="button" id="backToLoginButton" class="btn btn-secondary mt-3">Back to Login</button>
-        </form>
-    </div>
+  </div>
 </div>
-
-
-    <!-- Main Container -->
-    <div class="container">
-        <!-- Dark Mode Toggle -->
-        <div class="text-right my-3">
-            <button id="darkModeToggle" class="btn btn-secondary">
-                <i class="fas fa-moon"></i> Toggle Dark Mode
-            </button>
-        </div>
-
-        <!-- Main Heading -->
-        <h1 class="text-center my-4">Streaming Service Pricing</h1>
-
-        <!-- Total Price and Custom Plan Button -->
-        <div id="totalContainer" class="text-center mb-4">
-            <h2>Total: $<span id="totalPrice">0.00</span></h2>
-            <button id="viewPlanBtn" class="btn btn-success">View Custom Plan</button>
-        </div>
-
-        <!-- Sort and Filter Options -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <select id="sortOptions" class="form-control">
-                    <option value="default">Sort by</option>
-                    <option value="price-asc">Price: Low to High</option>
-                    <option value="price-desc">Price: High to Low</option>
-                </select>
-            </div>
-            <div class="col-md-6 mb-3">
-                <select id="filterOptions" class="form-control">
-                    <option value="all">Filter by Service</option>
-                </select>
-            </div>
-            <div class="col-md-12">
-                <input type="text" id="searchBar" class="form-control" placeholder="Search services..." />
-            </div>
-        </div>
-
-        <!-- Services Container for Dynamic Content -->
-        <div id="servicesContainer" class="row"></div>
-
-        <!-- Plan Modal for Viewing Custom Plans -->
-        <div id="planModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h5>Your Custom Plan</h5>
-                <h6>Breakdown by Month:</h6>
-                <ul id="planBreakdown" class="list-group"></ul>
-                <hr />
-                <h6>Total Monthly Price: $<span id="monthlyTotal">0.00</span></h6>
-                <h6>Total Price After 3 Months: $<span id="threeMonthTotal">0.00</span></h6>
-                <h6>Total Price After 6 Months: $<span id="sixMonthTotal">0.00</span></h6>
-                <h6>Total Price After 9 Months: $<span id="nineMonthTotal">0.00</span></h6>
-                <h6>Total Price After One Year: $<span id="yearlyTotal">0.00</span></h6>
-                <h5>Price Distribution:</h5>
-                <canvas id="planChart" width="400" height="400"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js"></script>
-</body>
-
-<!-- Footer Disclaimer -->
-<footer class="disclaimer-footer text-center mt-4">
-    <p class="disclaimer-text">
-        Disclaimer: Prices listed on this site are for informational purposes only. Actual prices may vary. Please check the official provider websites for current pricing and plan details.
-    </p>
-</footer>
-
-</html>

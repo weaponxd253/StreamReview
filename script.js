@@ -1,492 +1,387 @@
-// ========================= 
-// Global Variables & Elements
-// =========================
-let totalPrice = 0;
-let selectedPlans = [];
-let chartInstance = null;
-
-const servicesContainer = document.getElementById("servicesContainer");
-const totalPriceElem = document.getElementById("totalPrice");
-const planBreakdown = document.getElementById("planBreakdown");
-const monthlyTotalElem = document.getElementById("monthlyTotal");
-const threeMonthTotalElem = document.getElementById("threeMonthTotal");
-const sixMonthTotalElem = document.getElementById("sixMonthTotal");
-const nineMonthTotalElem = document.getElementById("nineMonthTotal");
-const yearlyTotalElem = document.getElementById("yearlyTotal");
-const modal = document.getElementById("planModal");
-const viewPlanBtn = document.getElementById("viewPlanBtn");
-const closeModal = document.querySelector(".close");
-const darkModeToggle = document.getElementById("darkModeToggle");
-const sidebar = document.getElementById("sidebar");
-const openSidebarBtn = document.getElementById("openSidebarBtn");
-const closeBtn = document.getElementById("closeBtn");
-const overlay = document.getElementById("overlay");
-const newPasswordInput = document.getElementById("newPassword");
-const passwordStrengthDisplay = document.getElementById("passwordStrength");
-
-
-// =========================
-// Initial Setup on DOMContentLoaded
-// =========================
 document.addEventListener("DOMContentLoaded", () => {
-    setupLoginModal();
-    setupSignUpModal();
-    setupSidebar();
-    setupDarkModeToggle();
-    fetchAndDisplayServices();
-    setupPlanModal();
-});
+  const subscriptionsKey = "userSubscriptions";
 
+  // Load existing subscriptions from localStorage on page load
+  loadSubscriptions();
+  
+  
 
-// =========================
-// Login Modal Functionality
-// =========================
-function handleLogin(event) {
-    event.preventDefault();
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+  // Add click event listener to add/remove subscription buttons
+  document.body.addEventListener("click", (e) => {
+    if (e.target.classList.contains("add-subscription")) {
+      const plan = e.target.getAttribute("data-plan");
+      const price = e.target.getAttribute("data-price");
+      const duration = e.target.getAttribute("data-duration");
 
-    fetch("http://localhost:3000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.success) {
-            showToast("Login successful", "success");
-            document.getElementById("loginModal").style.display = "none";
-            document.getElementById("sidebarContainer").style.display = "block";
-            document.getElementById("openSidebarBtn").style.display = "flex";
-            document.getElementById("loginIconButton").style.display = "none";
-        } else {
-            showToast("Login failed: " + data.message, "error");
-        }
-    })
-    .catch((error) => {
-        console.error("Error logging in:", error);
-        showToast("An error occurred during login. Please try again later.", "error");
-    });
-}
+      if (!plan || !price || !duration) {
+        alert("Error: Subscription data is incomplete. Please try again.");
+        return;
+      }
 
-
-function setupLoginModal() {
-    const loginIconButton = document.getElementById("loginIconButton");
-    const loginModal = document.getElementById("loginModal");
-    const closeLoginModal = document.getElementById("closeLoginModal");
-    const openSignUpModalBtn = document.getElementById("openSignUpModal");
-
-    loginIconButton.addEventListener("click", () => loginModal.style.display = "block");
-    closeLoginModal.addEventListener("click", () => loginModal.style.display = "none");
-
-    window.addEventListener("click", (event) => {
-        if (event.target === loginModal) loginModal.style.display = "none";
-    });
-
-    // Open Sign Up Modal when clicking on Sign Up button inside Login Modal
-    openSignUpModalBtn.addEventListener("click", () => {
-        loginModal.style.display = "none"; // Close Login modal
-        document.getElementById("signUpModal").style.display = "block"; // Open Sign Up modal
-    });
-
-    // Attach handleLogin to the form's submit event
-    document.getElementById("loginForm").addEventListener("submit", handleLogin);
-}
-
-
-// =========================
-// Toast Notification Function
-// =========================
-function showToast(message, type = "success") {
-    const toast = document.getElementById("toast");
-    const toastMessage = document.getElementById("toastMessage");
-
-    toastMessage.textContent = message;
-    toast.className = `toast show ${type}`;
-
-    setTimeout(() => {
-        toast.className = "toast"; // Remove the show class to hide
-    }, 3000); // Toast disappears after 3 seconds
-}
-
-
-
-
-// =========================
-// Sidebar Functionality
-// =========================
-function setupSidebar() {
-    const openSidebarBtn = document.getElementById("openSidebarBtn");
-    const closeBtn = document.getElementById("closeBtn");
-    const overlay = document.getElementById("overlay");
-    const logoutLink = document.getElementById("logoutLink"); // Select the logout link
-
-    openSidebarBtn.addEventListener("click", openSidebar);
-    closeBtn.addEventListener("click", closeSidebar);
-    overlay.addEventListener("click", closeSidebar);
-
-    // Add event listener for logout
-    logoutLink.addEventListener("click", (event) => {
-        event.preventDefault(); // Prevent default anchor behavior
-        handleLogout();
-    });
-}
-
-
-function openSidebar() {
-    sidebar.classList.add("open-sidebar");
-    document.body.classList.add("sidebar-open");
-    overlay.classList.add("overlay-active");
-    openSidebarBtn.setAttribute("aria-expanded", "true");
-}
-
-function closeSidebar() {
-    sidebar.classList.remove("open-sidebar");
-    document.body.classList.remove("sidebar-open");
-    overlay.classList.remove("overlay-active");
-    openSidebarBtn.setAttribute("aria-expanded", "false");
-}
-
-// =========================
-// Theme Toggle Functionality
-// =========================
-function setupDarkModeToggle() {
-    if (localStorage.getItem("darkMode") === "enabled") {
-        activateDarkMode();
+      if (e.target.classList.contains("added")) {
+        // If already added, remove the subscription
+        removeSubscription(plan, e.target);
+      } else {
+        // Otherwise, add the subscription
+        addSubscription({ plan, price, duration }, e.target);
+      }
     }
 
-    darkModeToggle.addEventListener("click", toggleDarkMode);
-}
+    // Handle clicks on remove buttons in the subscription list
+    if (e.target.classList.contains("remove-subscription")) {
+      const plan = e.target.getAttribute("data-plan");
 
-function toggleDarkMode() {
-    document.body.classList.toggle("dark-mode");
-    const icon = darkModeToggle.querySelector("i");
+      if (!plan) {
+        alert("Error: Unable to remove subscription. Missing plan data.");
+        return;
+      }
 
-    if (document.body.classList.contains("dark-mode")) {
-        icon.classList.replace("fa-moon", "fa-sun");
-        localStorage.setItem("darkMode", "enabled");
+      removeSubscription(plan);
+    }
+  });
+
+function addSubscription(subscription, buttonElement) {
+    const subscriptions = JSON.parse(localStorage.getItem(subscriptionsKey)) || [];
+
+    if (!subscriptions.some(s => s.plan === subscription.plan)) {
+        subscriptions.push(subscription);
+        localStorage.setItem(subscriptionsKey, JSON.stringify(subscriptions));
+        showToast(`Subscription added: ${subscription.plan}`);
+
+        toggleAddIcon(buttonElement, true);
+        highlightSubscription(subscription.plan, true);
     } else {
-        icon.classList.replace("fa-sun", "fa-moon");
-        localStorage.setItem("darkMode", "disabled");
+        showToast(`Subscription already exists: ${subscription.plan}`, "error");
+    }
+
+    displaySubscriptions(subscriptions);
+}
+
+
+function removeSubscription(plan, buttonElement = null) {
+    let subscriptions = JSON.parse(localStorage.getItem(subscriptionsKey)) || [];
+
+    subscriptions = subscriptions.filter(subscription => subscription.plan !== plan);
+    localStorage.setItem(subscriptionsKey, JSON.stringify(subscriptions));
+
+    showToast(`Subscription removed: ${plan}`);
+    displaySubscriptions(subscriptions);
+
+    if (buttonElement) {
+        toggleAddIcon(buttonElement, false);
+    }
+
+    highlightSubscription(plan, false);
+}
+  
+  function highlightSubscription(plan, isHighlighted) {
+    const subscriptionElement = document.querySelector(`.add-subscription[data-plan="${plan}"]`);
+    
+    if (subscriptionElement) {
+        const listItem = subscriptionElement.closest(".list-group-item");
+        if (listItem) {
+            if (isHighlighted) {
+                listItem.classList.add("selected-subscription");
+            } else {
+                listItem.classList.remove("selected-subscription");
+            }
+        }
     }
 }
 
-function activateDarkMode() {
-    document.body.classList.add("dark-mode");
-    darkModeToggle.querySelector("i").classList.replace("fa-moon", "fa-sun");
-}
 
-// =========================
-// Data Fetching and Display
-// =========================
-function fetchAndDisplayServices() {
-    fetch("http://localhost:3000/api/services")
-        .then((response) => response.json())
-        .then((data) => {
-            data.forEach(createServiceCard);
-            initializeStarRatings();
-        })
-        .catch((error) => console.error("Error fetching services:", error));
-}
 
-function createServiceCard(service) {
-    const sanitizedServiceName = sanitizeServiceName(service.name);
-    const card = document.createElement("div");
-    card.classList.add("col-md-4", "mb-4");
-    card.innerHTML = generateCardContent(service, sanitizedServiceName);
-    servicesContainer.appendChild(card);
-}
+  function toggleAddIcon(buttonElement, isAdded) {
+    if (isAdded) {
+      buttonElement.classList.add("added", "icon-minus");
+      buttonElement.classList.remove("fa-square-plus", "icon-plus");
+      buttonElement.classList.add("fa-square-minus");
+      buttonElement.setAttribute("title", "Remove Subscription");
+    } else {
+      buttonElement.classList.remove("added", "icon-minus");
+      buttonElement.classList.add("fa-square-plus", "icon-plus");
+      buttonElement.classList.remove("fa-square-minus");
+      buttonElement.setAttribute("title", "Add Subscription");
+    }
+  }
 
-function generateCardContent(service, sanitizedServiceName) {
-    return `
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">${service.name}</h5>
-                <div class="star-rating" data-service="${service.name}">
-                    ${Array.from({ length: 5 }, (_, i) => `<i class="fas fa-star" data-value="${i + 1}"></i>`).join('')}
-                </div>
-                <span class="rating-value">0/5</span>
-                ${service.plans.map(plan => generatePlanContent(plan, sanitizedServiceName)).join("")}
-            </div>
-        </div>`;
-}
+  function loadSubscriptions() {
+    const subscriptions =
+      JSON.parse(localStorage.getItem(subscriptionsKey)) || [];
+    displaySubscriptions(subscriptions);
 
-function generatePlanContent(plan, sanitizedServiceName) {
-    return `
-        <div class="plan mb-3" data-service="${sanitizedServiceName}" data-price="${plan.price}">
-            <button class="btn btn-primary add-plan" data-service="${sanitizedServiceName}" data-plan="${plan.plan}" data-price="${plan.price}">
-                <i class="fas fa-plus"></i> Add
-            </button>
-            ${plan.plan}: <span class="price">$${plan.price}/month</span>
-        </div>`;
-}
+    // Sync the dropdown icons with the current subscriptions
+    syncDropdownIcons(subscriptions);
+  }
 
-// =========================
-// Event Listeners for Plans and Modals
-// =========================
-function setupPlanModal() {
-    servicesContainer.addEventListener("click", (event) => {
-        if (event.target.classList.contains("add-plan")) {
-            handlePlanSelection(event.target);
-        }
+  function syncDropdownIcons(subscriptions) {
+    const addButtons = document.querySelectorAll(".add-subscription");
+    addButtons.forEach((button) => {
+      const plan = button.getAttribute("data-plan");
+      if (subscriptions.some((s) => s.plan === plan)) {
+        toggleAddIcon(button, true); // Set to "Remove"
+      } else {
+        toggleAddIcon(button, false); // Set to "Add"
+      }
     });
+  }
 
-    viewPlanBtn.addEventListener("click", () => {
-        updatePlanBreakdown();
-        if (selectedPlans.length > 0) {
-            generateChart(selectedPlans);
-        }
-        modal.style.display = "block";
-    });
+  function displaySubscriptions(subscriptions) {
+    const subscriptionList = document.getElementById("subscriptionList");
+    const emptyState = document.getElementById("emptyState");
 
-    closeModal.addEventListener("click", () => (modal.style.display = "none"));
-    window.addEventListener("click", (event) => {
-        if (event.target === modal) modal.style.display = "none";
-    });
-}
+    // Clear the current content
+    subscriptionList.innerHTML = "";
 
-// =========================
-// Plan Selection and Management
-// =========================
-function handlePlanSelection(planButton) {
-    const planElem = planButton.parentElement;
-    const planName = planElem.closest(".card").querySelector(".card-title").textContent.trim();
-    const sanitizedPlanName = sanitizeServiceName(planName);
-    const planPrice = parseFloat(planElem.dataset.price);
+    // Check if subscriptions are empty
+    if (subscriptions.length === 0) {
+      emptyState.style.display = "block";
+      subscriptionList.style.display = "none";
 
-    if (isNaN(planPrice)) {
-        console.error("Invalid price detected.");
-        return;
+      // Clear the price comparison if there are no subscriptions
+      const breakdownContainer = document.getElementById("priceBreakdown");
+      breakdownContainer.innerHTML = "";
+      return;
     }
 
-    planButton.classList.contains("active") ? deselectPlan(sanitizedPlanName, planPrice, planButton) : selectPlan(sanitizedPlanName, planPrice, planButton);
-    updateTotalPrice();
-}
+    emptyState.style.display = "none";
+    subscriptionList.style.display = "block";
 
-function selectPlan(sanitizedPlanName, planPrice, planButton) {
-    totalPrice += planPrice;
-    selectedPlans.push({ name: sanitizedPlanName, price: planPrice });
-    updateButtonToSelected(planButton, sanitizedPlanName);
-}
+    let totalPrice = 0;
 
-function deselectPlan(sanitizedPlanName, planPrice, planButton) {
-    totalPrice -= planPrice;
-    selectedPlans = selectedPlans.filter(plan => !(plan.name === sanitizedPlanName && plan.price === planPrice));
-    updateButtonToDeselected(planButton, sanitizedPlanName);
-}
+    // Create a smaller summary list inside the breakdown
+    const summaryList = document.createElement("ul");
+    summaryList.classList.add("list-group", "summary-list");
 
-function updateButtonToSelected(button, serviceName) {
-    button.innerHTML = '<i class="fas fa-check"></i> Remove';
-    button.classList.add("active");
-}
+    subscriptions.forEach((subscription) => {
+      totalPrice += parseFloat(subscription.price); // Calculate total price
 
-function updateButtonToDeselected(button, serviceName) {
-    button.innerHTML = '<i class="fas fa-plus"></i> Add';
-    button.classList.remove("active");
-}
+      // Create a smaller list item for the summary
+      const summaryItem = document.createElement("li");
+      summaryItem.classList.add("list-group-item", "py-2", "px-3");
+      summaryItem.innerHTML = `
+      <strong>${subscription.plan}</strong> - $${subscription.price} (${subscription.duration})
+    `;
 
-// =========================
-// Price and Plan Breakdown
-// =========================
-function updateTotalPrice() {
-    totalPriceElem.textContent = totalPrice.toFixed(2);
-}
-
-function updatePlanBreakdown() {
-    planBreakdown.innerHTML = selectedPlans.map(plan => `<li class="list-group-item">${plan.name}: $${plan.price.toFixed(2)} per month</li>`).join("");
-    updateTotals();
-}
-
-function updateTotals() {
-    const monthlyTotal = selectedPlans.reduce((sum, plan) => sum + plan.price, 0);
-    monthlyTotalElem.textContent = monthlyTotal.toFixed(2);
-    threeMonthTotalElem.textContent = (monthlyTotal * 3).toFixed(2);
-    sixMonthTotalElem.textContent = (monthlyTotal * 6).toFixed(2);
-    nineMonthTotalElem.textContent = (monthlyTotal * 9).toFixed(2);
-    yearlyTotalElem.textContent = (monthlyTotal * 12).toFixed(2);
-}
-
-// =========================
-// Star Ratings
-// =========================
-function initializeStarRatings() {
-    document.querySelectorAll(".star-rating").forEach(rating => {
-        rating.querySelectorAll("i").forEach(star => {
-            star.addEventListener("click", () => updateRating(rating, star));
-        });
-    });
-}
-
-function updateRating(rating, star) {
-    const ratingValue = star.getAttribute("data-value");
-    rating.nextElementSibling.textContent = `${ratingValue}/5`;
-    Array.from(rating.querySelectorAll("i")).forEach((s, i) => s.classList.toggle("selected", i < ratingValue));
-    saveRating(rating.dataset.service, ratingValue);
-}
-
-function saveRating(service, rating) {
-    fetch("http://localhost:3000/api/rate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service, rating })
-    }).then(response => {
-        if (!response.ok) throw new Error(`Server error: ${response.status}`);
-        return response.json();
-    }).then(data => console.log("Rating saved:", data))
-    .catch(error => console.error("Error saving rating:", error));
-}
-
-// =========================
-// Chart Generation
-// =========================
-function generateChart(selectedPlans) {
-    const canvas = document.getElementById("planChart");
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    const chartData = prepareChartData(selectedPlans);
-
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, { type: "doughnut", data: chartData });
-}
-
-function prepareChartData(selectedPlans) {
-    const labels = selectedPlans.map(plan => plan.name);
-    const data = selectedPlans.map(plan => plan.price);
-    const dynamicColors = selectedPlans.map(getRandomColor);
-
-    return {
-        labels,
-        datasets: [{ label: "Price Distribution", data, backgroundColor: dynamicColors, hoverOffset: 4 }]
-    };
-}
-
-function getRandomColor() {
-    return `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
-}
-
-// =========================
-// Helper Functions
-// =========================
-function sanitizeServiceName(name) {
-    return name.replace(/\s+/g, '-').toLowerCase();
-}
-
-// =========================
-// Sign Up Modal Functionality
-// =========================
-function setupSignUpModal() {
-    const signUpModal = document.getElementById("signUpModal");
-    const closeSignUpModal = document.getElementById("closeSignUpModal");
-    const backToLoginButton = document.getElementById("backToLoginButton");
-
-    closeSignUpModal.addEventListener("click", () => signUpModal.style.display = "none");
-
-    window.addEventListener("click", (event) => {
-        if (event.target === signUpModal) signUpModal.style.display = "none";
+      summaryList.appendChild(summaryItem);
     });
 
-    // Back to Login functionality
-    backToLoginButton.addEventListener("click", () => {
-        signUpModal.style.display = "none";
-        document.getElementById("loginModal").style.display = "block"; // Show Login modal
+    // Display the price breakdown
+    const priceBreakdown = document.createElement("div");
+    priceBreakdown.classList.add("price-breakdown", "p-3", "text-center");
+    priceBreakdown.innerHTML = `
+    <h6><strong>Price Breakdown</strong></h6>
+    <p>Total Subscriptions: <strong>${subscriptions.length}</strong></p>
+    <p>Total Cost: <strong>$${totalPrice.toFixed(2)}</strong></p>
+  `;
+
+    // Append the smaller list to the breakdown
+    priceBreakdown.appendChild(summaryList);
+
+    // Render the breakdown only
+    subscriptionList.appendChild(priceBreakdown);
+
+    // Call the comparison table display function
+    displayPriceComparison(subscriptions);
+  }
+
+  function calculatePriceComparison(subscriptionPlans) {
+    return subscriptionPlans.map((plan) => {
+      const monthlyCost = parseFloat(plan.price); // Monthly price
+      const isMonthly = plan.duration === "1 Month";
+      const isThreeMonth = plan.duration === "3 Months";
+      const isYearly = plan.duration === "Yearly";
+
+      // Calculate the costs for each duration
+      const costFor3Months = isMonthly
+        ? (monthlyCost * 3).toFixed(2)
+        : isThreeMonth
+        ? monthlyCost.toFixed(2)
+        : "N/A";
+      const costForYearly = isMonthly
+        ? (monthlyCost * 12).toFixed(2)
+        : isThreeMonth
+        ? (monthlyCost * 4).toFixed(2)
+        : isYearly
+        ? monthlyCost.toFixed(2)
+        : "N/A";
+
+      return {
+        name: plan.plan, // Plan name
+        duration: plan.duration, // Plan duration
+        monthlyCost: isMonthly ? `$${monthlyCost.toFixed(2)}` : "N/A",
+        threeMonthCost: costFor3Months !== "N/A" ? `$${costFor3Months}` : "N/A",
+        yearlyCost: costForYearly !== "N/A" ? `$${costForYearly}` : "N/A"
+      };
     });
+  }
 
-    // Add event listener for form submission
-    document.getElementById("signUpForm").addEventListener("submit", handleSignUp);
+  function displayPriceComparison(subscriptionPlans) {
+    const comparisonData = calculatePriceComparison(subscriptionPlans);
+    const breakdownContainer = document.getElementById("priceBreakdown");
 
-    // Validate passwords match
-    const passwordInput = document.getElementById("newPassword");
-    const confirmPasswordInput = document.getElementById("confirmPassword");
-    const passwordMismatchMessage = document.getElementById("passwordMismatch");
-
-    confirmPasswordInput.addEventListener("input", () => {
-        if (confirmPasswordInput.value !== passwordInput.value) {
-            passwordMismatchMessage.style.display = "block";
-        } else {
-            passwordMismatchMessage.style.display = "none";
-        }
-    });
-}
-
-function handleSignUp(event) {
-    event.preventDefault();
-    const username = document.getElementById("newUsername").value;
-    const password = document.getElementById("newPassword").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    const birthdate = document.getElementById("birthdate").value;
-
-    // Check if passwords match
-    if (password !== confirmPassword) {
-        alert("Passwords do not match. Please try again.");
-        return;
+    if (!comparisonData.length) {
+      breakdownContainer.innerHTML = "";
+      return;
     }
 
-    // Check password strength
-    const strength = evaluatePasswordStrength(password);
-    if (strength === "weak") {
-        alert("Password strength is too weak. Please choose a stronger password.");
-        return;
+    let comparisonTable = `
+    <table class="table table-bordered text-center">
+      <thead>
+        <tr>
+          <th>Plan</th>
+          <th>Month-to-Month</th>
+          <th>3-Month Subscription</th>
+          <th>Yearly Subscription</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+    // Find the best yearly value
+    let minYearlyCost = Infinity;
+    comparisonData.forEach((data) => {
+      const yearlyCost =
+        parseFloat(data.yearlyCost.replace("$", "")) || Infinity;
+      if (yearlyCost < minYearlyCost) {
+        minYearlyCost = yearlyCost;
+      }
+    });
+
+    comparisonData.forEach((data) => {
+      const yearlyCost =
+        parseFloat(data.yearlyCost.replace("$", "")) || Infinity;
+      const isBestValue = yearlyCost === minYearlyCost;
+
+      comparisonTable += `
+      <tr>
+        <td>${data.name}</td>
+        <td class="${data.monthlyCost === "N/A" ? "na" : ""}">${
+        data.monthlyCost
+      }</td>
+        <td class="${data.threeMonthCost === "N/A" ? "na" : ""}">${
+        data.threeMonthCost
+      }</td>
+        <td class="${
+          isBestValue ? "best-value" : data.yearlyCost === "N/A" ? "na" : ""
+        }">
+          ${data.yearlyCost}
+        </td>
+      </tr>
+    `;
+    });
+
+    comparisonTable += `
+      </tbody>
+    </table>
+  `;
+
+    // Add savings highlight if yearly subscriptions exist
+    const hasYearly = comparisonData.some((data) => data.yearlyCost !== "N/A");
+    const savingsHighlight = hasYearly
+      ? `
+    <div class="savings-highlight text-center mt-3">
+      <p><strong>Save money by opting for longer-term subscriptions!</strong></p>
+    </div>
+  `
+      : "";
+
+    breakdownContainer.innerHTML = comparisonTable + savingsHighlight;
+  }
+  
+document.addEventListener("DOMContentLoaded", () => {
+  const planDetails = {
+    essential: {
+      title: "PlayStation Plus Essential",
+      description: `
+        <p><strong>This is the foundational tier, providing core benefits to enhance your gaming experience:</strong></p>
+        <ul>
+          <li><strong>Online Multiplayer Access:</strong> Play online with friends and other players.</li>
+          <li><strong>Monthly Games:</strong> Access to PS4 and PS5 games each month.</li>
+          <li><strong>Exclusive Discounts:</strong> Special deals in the PlayStation Store.</li>
+          <li><strong>Cloud Storage:</strong> 100 GB for your game saves.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $9.99 | Quarterly: $24.99 | Yearly: $79.99</p>
+      `,
+    },
+    extra: {
+      title: "PlayStation Plus Extra",
+      description: `
+        <p><strong>Building upon the Essential tier, the Extra plan offers additional perks:</strong></p>
+        <ul>
+          <li><strong>Game Catalog:</strong> Access up to 400 PS4 and PS5 games.</li>
+          <li><strong>Ubisoft+ Classics:</strong> A curated selection of Ubisoft titles.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $14.99 | Quarterly: $39.99 | Yearly: $134.99</p>
+      `,
+    },
+    premium: {
+      title: "PlayStation Plus Premium",
+      description: `
+        <p><strong>Offering all benefits of Essential and Extra tiers, plus exclusive features:</strong></p>
+        <ul>
+          <li><strong>Classics Catalog:</strong> Stream or download games from older PlayStation generations.</li>
+          <li><strong>Game Trials:</strong> Try new games before buying.</li>
+          <li><strong>Cloud Streaming:</strong> Play on PS4, PS5, or PC.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $17.99 | Quarterly: $49.99 | Yearly: $159.99</p>
+      `,
+    },
+  };
+
+  // Attach click event for question marks
+  document.body.addEventListener("click", (e) => {
+    if (e.target.classList.contains("psQuestion")) {
+      const plan = e.target.getAttribute("data-plan");
+      const planDetail = planDetails[plan];
+      if (planDetail) {
+        document.getElementById("offcanvasTitle").textContent = planDetail.title;
+        document.getElementById("offcanvasContent").innerHTML = planDetail.description;
+      }
     }
-
-    // Send sign-up data to server
-    fetch("http://localhost:3000/api/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, birthdate })
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        if (data.success) {
-            showToast("Sign-up successful! You can now log in.", "success");
-            document.getElementById("signUpModal").style.display = "none";
-        } else {
-            showToast("Sign-up failed: " + data.message, "error");
-        }
-    })
-    .catch((error) => console.error("Error signing up:", error));
-}
-
-
-function handleLogout() {
-    // Hide the sidebar and overlay
-    document.getElementById("sidebarContainer").style.display = "none";
-    document.getElementById("overlay").classList.remove("overlay-active");
-
-    // Hide the sidebar toggle button
-    document.getElementById("openSidebarBtn").style.display = "none";
-
-    // Show the login button again
-    document.getElementById("loginIconButton").style.display = "flex";
-
-    // Optionally clear session or token data
-    localStorage.removeItem("authToken"); // Example: clear any stored authentication token
-
-    // Show a success notification for logout
-    showToast("You have been logged out successfully", "success");
-}
-
-// =========================
-// Password Strength Evaluation
-// =========================
-newPasswordInput.addEventListener("input", () => {
-    const strength = evaluatePasswordStrength(newPasswordInput.value);
-    displayPasswordStrength(strength);
+  });
 });
 
-function evaluatePasswordStrength(password) {
-    let strengthScore = 0;
-    if (password.length >= 8) strengthScore++;
-    if (/[A-Z]/.test(password)) strengthScore++;
-    if (/[0-9]/.test(password)) strengthScore++;
-    if (/[^A-Za-z0-9]/.test(password)) strengthScore++;
 
-    if (strengthScore <= 1) return "weak";
-    if (strengthScore === 2) return "medium";
-    if (strengthScore >= 3) return "strong";
-}
 
-function displayPasswordStrength(strength) {
-    passwordStrengthDisplay.textContent = `Strength: ${strength}`;
-    passwordStrengthDisplay.className = `strength-meter ${strength}`;
-}
+  function showToast(message, type = "success") {
+    const toastContainer = document.getElementById("toastContainer");
+
+    // Create a unique ID for the toast
+    const toastId = `toast-${Date.now()}`;
+
+    // Create toast element
+    const toast = document.createElement("div");
+    toast.className = `toast align-items-center text-bg-${
+      type === "error" ? "danger" : "success"
+    } border-0`;
+    toast.setAttribute("id", toastId);
+    toast.setAttribute("role", "alert");
+    toast.setAttribute("aria-live", "assertive");
+    toast.setAttribute("aria-atomic", "true");
+
+    // Toast content
+    toast.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body">
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+
+    // Append toast to the container
+    toastContainer.appendChild(toast);
+
+    // Initialize the toast (Bootstrap method)
+    const bootstrapToast = new bootstrap.Toast(toast);
+
+    // Show the toast
+    bootstrapToast.show();
+
+    // Automatically remove the toast from the DOM when hidden
+    toast.addEventListener("hidden.bs.toast", () => {
+      toast.remove();
+    });
+  }
+});
