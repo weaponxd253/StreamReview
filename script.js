@@ -8,28 +8,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add click event listener to add/remove subscription buttons
   document.body.addEventListener("click", (e) => {
-    if (e.target.classList.contains("add-subscription")) {
-      const plan = e.target.getAttribute("data-plan");
-      const price = e.target.getAttribute("data-price");
-      const duration = e.target.getAttribute("data-duration");
+    const subscriptionButton = e.target.closest(".add-subscription");
+    if (subscriptionButton) {
+      const plan = subscriptionButton.getAttribute("data-plan");
+      const price = subscriptionButton.getAttribute("data-price");
+      const duration = subscriptionButton.getAttribute("data-duration");
 
       if (!plan || !price || !duration) {
         alert("Error: Subscription data is incomplete. Please try again.");
         return;
       }
 
-      if (e.target.classList.contains("added")) {
+      if (subscriptionButton.classList.contains("added")) {
         // If already added, remove the subscription
-        removeSubscription(plan, e.target);
+        removeSubscription(plan, subscriptionButton);
       } else {
         // Otherwise, add the subscription
-        addSubscription({ plan, price, duration }, e.target);
+        addSubscription({ plan, price, duration }, subscriptionButton);
       }
     }
 
+    const detailButton = e.target.closest(".plan-info");
+    if (detailButton) {
+      showPlanDetails(detailButton.getAttribute("data-plan"));
+    }
+
     // Handle clicks on remove buttons in the subscription list
-    if (e.target.classList.contains("remove-subscription")) {
-      const plan = e.target.getAttribute("data-plan");
+    const removeButton = e.target.closest(".remove-subscription");
+    if (removeButton) {
+      const plan = removeButton.getAttribute("data-plan");
 
       if (!plan) {
         alert("Error: Unable to remove subscription. Missing plan data.");
@@ -46,12 +53,12 @@ function addSubscription(subscription, buttonElement) {
     if (!subscriptions.some(s => s.plan === subscription.plan)) {
         subscriptions.push(subscription);
         localStorage.setItem(subscriptionsKey, JSON.stringify(subscriptions));
-        showToast(`Subscription added: ${subscription.plan}`);
+        showToast(`Added ${getShortPlanName(subscription.plan)}`);
 
         toggleAddIcon(buttonElement, true);
         highlightSubscription(subscription.plan, true);
     } else {
-        showToast(`Subscription already exists: ${subscription.plan}`, "error");
+        showToast(`${getShortPlanName(subscription.plan)} is already selected`, "error");
     }
 
     displaySubscriptions(subscriptions);
@@ -64,7 +71,7 @@ function removeSubscription(plan, buttonElement = null) {
     subscriptions = subscriptions.filter(subscription => subscription.plan !== plan);
     localStorage.setItem(subscriptionsKey, JSON.stringify(subscriptions));
 
-    showToast(`Subscription removed: ${plan}`);
+    showToast(`Removed ${getShortPlanName(plan)}`);
     displaySubscriptions(subscriptions);
 
     if (buttonElement) {
@@ -91,17 +98,31 @@ function removeSubscription(plan, buttonElement = null) {
 
 
 
+  function getShortPlanName(plan) {
+    return plan.replace(/\s-\s(?:Monthly|3 Months|Yearly(?: \(Up to 8 accounts\))?)$/, "");
+  }
+
   function toggleAddIcon(buttonElement, isAdded) {
+    const icon = buttonElement.querySelector("i");
+    const plan = buttonElement.getAttribute("data-plan");
+    const action = isAdded ? "Remove" : "Add";
+
+    buttonElement.classList.toggle("added", isAdded);
+    buttonElement.setAttribute("title", `${action} Subscription`);
+    if (plan) {
+      buttonElement.setAttribute("aria-label", `${action} ${plan}`);
+    }
+
+    if (!icon) {
+      return;
+    }
+
     if (isAdded) {
-      buttonElement.classList.add("added", "icon-minus");
-      buttonElement.classList.remove("fa-square-plus", "icon-plus");
-      buttonElement.classList.add("fa-square-minus");
-      buttonElement.setAttribute("title", "Remove Subscription");
+      icon.classList.add("fa-square-minus", "icon-minus");
+      icon.classList.remove("fa-square-plus", "icon-plus");
     } else {
-      buttonElement.classList.remove("added", "icon-minus");
-      buttonElement.classList.add("fa-square-plus", "icon-plus");
-      buttonElement.classList.remove("fa-square-minus");
-      buttonElement.setAttribute("title", "Add Subscription");
+      icon.classList.add("fa-square-plus", "icon-plus");
+      icon.classList.remove("fa-square-minus", "icon-minus");
     }
   }
 
@@ -289,7 +310,6 @@ function removeSubscription(plan, buttonElement = null) {
     breakdownContainer.innerHTML = comparisonTable + savingsHighlight;
   }
   
-document.addEventListener("DOMContentLoaded", () => {
   const planDetails = {
     essential: {
       title: "PlayStation Plus Essential",
@@ -327,21 +347,101 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Pricing:</strong> Monthly: $17.99 | Quarterly: $49.99 | Yearly: $119.99</p>
       `,
     },
+    "xbox-core": {
+      title: "Xbox Game Pass Core",
+      description: `
+        <p><strong>Core includes the essentials for console multiplayer and a smaller game library:</strong></p>
+        <ul>
+          <li><strong>Online Console Multiplayer:</strong> Play supported multiplayer games online.</li>
+          <li><strong>Game Catalog:</strong> Access a rotating selection of console games.</li>
+          <li><strong>Member Deals:</strong> Discounts and promotions on selected titles.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $9.99 | Yearly: $74.99</p>
+      `,
+    },
+    "xbox-pc": {
+      title: "Xbox Game Pass PC",
+      description: `
+        <p><strong>PC Game Pass focuses on Windows gaming access:</strong></p>
+        <ul>
+          <li><strong>PC Game Library:</strong> Access a rotating catalog of PC titles.</li>
+          <li><strong>New Releases:</strong> Includes selected first-party games on release day.</li>
+          <li><strong>Member Perks:</strong> Offers and discounts for PC players.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $14.99</p>
+      `,
+    },
+    "xbox-standard": {
+      title: "Xbox Game Pass Standard",
+      description: `
+        <p><strong>Standard combines console catalog access with online console multiplayer:</strong></p>
+        <ul>
+          <li><strong>Console Game Library:</strong> Browse a rotating library of console games.</li>
+          <li><strong>Online Multiplayer:</strong> Play supported online console multiplayer.</li>
+          <li><strong>Member Deals:</strong> Discounts on selected games and add-ons.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $14.99</p>
+      `,
+    },
+    "xbox-ultimate": {
+      title: "Xbox Game Pass Ultimate",
+      description: `
+        <p><strong>Ultimate is the broadest Xbox Game Pass tier:</strong></p>
+        <ul>
+          <li><strong>Console, PC, and Cloud:</strong> Access supported games across multiple ways to play.</li>
+          <li><strong>Online Multiplayer:</strong> Includes console multiplayer access.</li>
+          <li><strong>Extra Perks:</strong> Includes member rewards, discounts, and partner perks.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $19.99</p>
+      `,
+    },
+    "nintendo-switch-online": {
+      title: "Nintendo Switch Online",
+      description: `
+        <p><strong>Switch Online covers core Nintendo online features:</strong></p>
+        <ul>
+          <li><strong>Online Play:</strong> Play compatible Nintendo Switch games online.</li>
+          <li><strong>Classic Games:</strong> Access selected classic game libraries.</li>
+          <li><strong>Cloud Saves:</strong> Back up supported save data online.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Monthly: $3.99 | Quarterly: $7.99 | Yearly: $19.99</p>
+      `,
+    },
+    "nintendo-family": {
+      title: "Nintendo Family Membership",
+      description: `
+        <p><strong>Family Membership extends Nintendo Switch Online access across multiple accounts:</strong></p>
+        <ul>
+          <li><strong>Shared Access:</strong> Supports up to 8 Nintendo Accounts.</li>
+          <li><strong>Online Play:</strong> Online multiplayer for supported games.</li>
+          <li><strong>Classic Games and Cloud Saves:</strong> Includes core Switch Online benefits.</li>
+        </ul>
+        <p><strong>Pricing:</strong> $34.99</p>
+      `,
+    },
+    "nintendo-expansion": {
+      title: "Nintendo Switch Online + Expansion Pack",
+      description: `
+        <p><strong>Expansion Pack includes Switch Online benefits plus extra libraries and add-on content:</strong></p>
+        <ul>
+          <li><strong>Expanded Classics:</strong> Access additional classic game catalogs.</li>
+          <li><strong>DLC Access:</strong> Includes selected add-on content while subscribed.</li>
+          <li><strong>Family Option:</strong> A higher-priced plan supports up to 8 accounts.</li>
+        </ul>
+        <p><strong>Pricing:</strong> Individual Yearly: $49.99 | Family Yearly: $79.99</p>
+      `,
+    },
   };
 
-  // Attach click event for question marks
-  document.body.addEventListener("click", (e) => {
-    if (e.target.classList.contains("psQuestion")) {
-      const plan = e.target.getAttribute("data-plan");
-      const planDetail = planDetails[plan];
-      if (planDetail) {
-        document.getElementById("offcanvasTitle").textContent = planDetail.title;
-        document.getElementById("offcanvasContent").innerHTML = planDetail.description;
-      }
-    }
-  });
-});
+  function showPlanDetails(plan) {
+    const planDetail = planDetails[plan] || {
+      title: "Plan details",
+      description: "<p>Details for this plan are not available yet.</p>",
+    };
 
+    document.getElementById("offcanvasTitle").textContent = planDetail.title;
+    document.getElementById("offcanvasContent").innerHTML = planDetail.description;
+  }
 
 
   function showToast(message, type = "success") {
