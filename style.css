@@ -235,6 +235,23 @@ body {
   background: rgba(255, 255, 255, 0.7);
 }
 
+.remove-subscription {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  color: #b42318;
+  background: #fee4e2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-subscription:hover {
+  background: #fecdca;
+}
+
 .psSubheader .icon-plus,
 .psSubheader .icon-minus {
   color: var(--ps-dark);
@@ -416,6 +433,7 @@ body {
 #nintendo:focus-visible,
 .plan-info:focus-visible,
 .add-subscription:focus-visible,
+.remove-subscription:focus-visible,
 .btn-close:focus-visible {
   outline: 3px solid #facc15;
   outline-offset: 3px;

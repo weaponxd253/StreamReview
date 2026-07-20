@@ -10,257 +10,51 @@
 </head>
 <body>
 <main class="container app-shell">
-<header class="app-header">
-  <div>
-    <p class="app-kicker">Gaming subscription planner</p>
-    <h1>StreamReview</h1>
-  </div>
-</header>
-
-<div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
-  <div class="offcanvas-header">
-    <h5 id="offcanvasTitle"></h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-  </div>
-  <div class="offcanvas-body" id="offcanvasContent">
-    <!-- Dynamic content goes here -->
-  </div>
-</div>
-
-<section class="provider-section" aria-label="Subscription providers">
-<div class="row provider-grid g-4">
-  <div class="col-12 col-lg-4 provider-column">
-    <div class="row">
-      <div class="col">
-
-
-        <button class="btn btn-primary" id="ps" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePS" aria-expanded="false" aria-controls="collapsePS"><i class=" ml-2 fa-brands fa-playstation"></i>
-          PlayStation Network
-        </button>
-      </div>
+  <header class="app-header">
+    <div>
+      <p class="app-kicker">Gaming subscription planner</p>
+      <h1>StreamReview</h1>
     </div>
-    <div class="row">
+  </header>
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
+    <div class="offcanvas-header">
+      <h5 id="offcanvasTitle"></h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body" id="offcanvasContent">
+      <!-- Dynamic content goes here -->
+    </div>
+  </div>
+
+  <section class="provider-section" aria-label="Subscription providers">
+    <div id="providerGrid" class="row provider-grid g-4"></div>
+  </section>
+
+  <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer">
+    <!-- Toasts will be dynamically added here -->
+  </div>
+
+  <section class="summary-section">
+    <div class="row mt-4">
       <div class="col">
-        <div class="collapse multi-collapse" id="collapsePS">
-          <ul id="psList" class="list-group list-group-flush">
-            <li class="list-group-item psHeader">
-  Essential 
-  <button class="plan-info psQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="essential" aria-label="Show details for PlayStation Plus Essential">
-    <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
-  </button>
-</li>
-            <ul class="list-group list-group">
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Monthly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 9.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Essential - Monthly" data-price="9.99" data-duration="Monthly" title="Add Subscription" aria-label="Add PlayStation Essential Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">3 Months</div>
-                <i class="fa-solid fa-dollar-sign"></i> 24.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Essential - 3 Months" data-price="24.99" data-duration="3 Months" title="Add Subscription" aria-label="Add PlayStation Essential 3 Months"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Yearly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 59.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Essential - Yearly" data-price="59.99" data-duration="Yearly" title="Add Subscription" aria-label="Add PlayStation Essential Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
+        <div class="subscriptions-container card">
+          <h5 class="card-header">Your Current Subscriptions</h5>
+          <div class="card-body">
+            <ul id="subscriptionList" class="list-group">
+              <!-- Dynamically populated list -->
             </ul>
-           <li class="list-group-item psHeader">
-  Extra 
-  <button class="plan-info psQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="extra" aria-label="Show details for PlayStation Plus Extra">
-    <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
-  </button>
-</li>
-            <ul class="list-group list-group">
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Monthly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 14.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Extra - Monthly" data-price="14.99" data-duration="Monthly" title="Add Subscription" aria-label="Add PlayStation Extra Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">3 Months</div>
-                <i class="fa-solid fa-dollar-sign"></i> 39.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Extra - 3 Months" data-price="39.99" data-duration="3 Months" title="Add Subscription" aria-label="Add PlayStation Extra 3 Months"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Yearly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 99.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Extra - Yearly" data-price="99.99" data-duration="Yearly" title="Add Subscription" aria-label="Add PlayStation Extra Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-            </ul>
-           <li class="list-group-item psHeader">
-  Premium 
-  <button class="plan-info psQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="premium" aria-label="Show details for PlayStation Plus Premium">
-    <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
-  </button>
-</li>
-            <ul class="list-group list-group">
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Monthly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 17.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Premium - Monthly" data-price="17.99" data-duration="Monthly" title="Add Subscription" aria-label="Add PlayStation Premium Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">3 Months</div>
-                <i class="fa-solid fa-dollar-sign"></i> 49.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Premium - 3 Months" data-price="49.99" data-duration="3 Months" title="Add Subscription" aria-label="Add PlayStation Premium 3 Months"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item psSubheader">
-                <div class="fw-bold">Yearly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 119.99
-                <button class="add-subscription" type="button" data-plan="PlayStation Premium - Yearly" data-price="119.99" data-duration="Yearly" title="Add Subscription" aria-label="Add PlayStation Premium Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-            </ul>
-          </ul>
+          </div>
+          <div id="emptyState" class="text-muted text-center py-3" style="display: none;">
+            No subscriptions added yet.
+          </div>
+        </div>
+        <div id="priceBreakdown" class="price-breakdown-container mt-4">
+          <!-- Price breakdown will be dynamically generated here -->
         </div>
       </div>
-
     </div>
-  </div>
-  <div class="col-12 col-lg-4 provider-column">
-    <div class="row">
-      <div class="col">
-        <button class="btn btn-primary" id="xbox" type="button" data-bs-toggle="collapse" data-bs-target="#collapseXbox" aria-expanded="false" aria-controls="collapseXbox"><i class="m-2 fa-brands fa-xbox"></i>
-          Xbox Game Pass
-        </button>
-      </div>
-    </div>
-    <div class="row">
-      <div class="collapse multi-collapse" id="collapseXbox">
-        <ul class="list-group list-group-flush">
-          <li class="list-group-item xboxHeader">Game Pass Core <button class="plan-info xboxQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="xbox-core" aria-label="Show details for Xbox Game Pass Core"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-          <ul class="list-group list-group">
-            <li class="list-group-item xboxSubheader">
-              <div class="fw-bold">Monthly</div>
-              <i class="fa-solid fa-dollar-sign"></i> 9.99
-              <button class="add-subscription" type="button" data-plan="Xbox Game Pass Core - Monthly" data-price="9.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Xbox Game Pass Core Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-            </li>
-            <li class="list-group-item xboxSubheader">
-              <div class="fw-bold">Yearly</div>
-              <i class="fa-solid fa-dollar-sign"></i> 74.99
-              <button class="add-subscription" type="button" data-plan="Xbox Game Pass Core - Yearly" data-price="74.99" data-duration="Yearly" title="Add Subscription" aria-label="Add Xbox Game Pass Core Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-            </li>
-          </ul>
-
-          <li class="list-group-item xboxHeader">Game Pass PC <button class="plan-info xboxQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="xbox-pc" aria-label="Show details for Xbox Game Pass PC"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-          <ul class="list-group list-group">
-            <li class="list-group-item xboxSubheader">
-              <div class="fw-bold">Monthly</div>
-              <i class="fa-solid fa-dollar-sign"></i> 14.99
-              <button class="add-subscription" type="button" data-plan="Xbox Game Pass PC - Monthly" data-price="14.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Xbox Game Pass PC Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-            </li>
-          </ul>
-
-          <li class="list-group-item xboxHeader">Game Pass Standard <button class="plan-info xboxQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="xbox-standard" aria-label="Show details for Xbox Game Pass Standard"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-          <ul class="list-group list-group">
-            <li class="list-group-item xboxSubheader">
-              <div class="fw-bold">Monthly</div>
-              <i class="fa-solid fa-dollar-sign"></i> 14.99
-              <button class="add-subscription" type="button" data-plan="Xbox Game Pass Standard - Monthly" data-price="14.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Xbox Game Pass Standard Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-            </li>
-          </ul>
-
-          <li class="list-group-item xboxHeader">Game Pass Ultimate <button class="plan-info xboxQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="xbox-ultimate" aria-label="Show details for Xbox Game Pass Ultimate"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-          <ul class="list-group list-group">
-            <li class="list-group-item xboxSubheader">
-              <div class="fw-bold">Monthly</div>
-              <i class="fa-solid fa-dollar-sign"></i> 19.99
-              <button class="add-subscription" type="button" data-plan="Xbox Game Pass Ultimate - Monthly" data-price="19.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Xbox Game Pass Ultimate Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-            </li>
-          </ul>
-
-        </ul>
-      </div>
-    </div>
-
-  </div>
-  <div class="col-12 col-lg-4 provider-column">
-    <div class="row">
-      <div class="col">
-        <button class="btn btn-primary" id="nintendo" type="button" data-bs-toggle="collapse" data-bs-target="#collapseNintendo" aria-expanded="false" aria-controls="collapseNintendo"><i class="m-2 fa-solid fa-gamepad"></i>
-          Nintendo Online
-        </button>
-      </div>
-    </div>
-    <div class="row">
-      <div class="collapse multi-collapse" id="collapseNintendo">
-        <ul class="list-group list-group-flush">
-          <ul class="list-group list-group-flush">
-            <li class="list-group-item nintendoHeader">Switch Online <button class="plan-info nintendoQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="nintendo-switch-online" aria-label="Show details for Nintendo Switch Online"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-            <ul class="list-group list-group">
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">Monthly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 3.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Switch Online - Monthly" data-price="3.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Nintendo Switch Online Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">3 Months</div>
-                <i class="fa-solid fa-dollar-sign"></i> 7.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Switch Online - 3 Months" data-price="7.99" data-duration="3 Months" title="Add Subscription" aria-label="Add Nintendo Switch Online 3 Months"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">Yearly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 19.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Switch Online - Yearly" data-price="19.99" data-duration="Yearly" title="Add Subscription" aria-label="Add Nintendo Switch Online Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-            </ul>
-            <li class="list-group-item nintendoHeader">Family Membership <button class="plan-info nintendoQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="nintendo-family" aria-label="Show details for Nintendo Family Membership"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-            <ul class="list-group list-group">
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">Monthly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 34.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Family Membership - Monthly" data-price="34.99" data-duration="Monthly" title="Add Subscription" aria-label="Add Nintendo Family Membership Monthly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-            </ul>
-            <li class="list-group-item nintendoHeader">Expansion Pack <button class="plan-info nintendoQuestion" type="button" data-bs-toggle="offcanvas" data-bs-target="#descriptionOffcanvas" data-plan="nintendo-expansion" aria-label="Show details for Nintendo Expansion Pack"><i class="fa-solid fa-circle-question" aria-hidden="true"></i></button></li>
-            <ul class="list-group list-group">
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">Yearly</div>
-                <i class="fa-solid fa-dollar-sign"></i> 49.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Expansion Pack - Yearly" data-price="49.99" data-duration="Yearly" title="Add Subscription" aria-label="Add Nintendo Expansion Pack Yearly"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-              <li class="list-group-item nintendoSubHeader">
-                <div class="fw-bold">Yearly (Up to 8 accounts)</div>
-                <i class="fa-solid fa-dollar-sign"></i> 79.99
-                <button class="add-subscription" type="button" data-plan="Nintendo Expansion Pack - Yearly (Up to 8 accounts)" data-price="79.99" data-duration="Yearly" title="Add Subscription" aria-label="Add Nintendo Expansion Pack Yearly up to 8 accounts"><i class="fa-solid fa-square-plus icon-plus" aria-hidden="true"></i></button>
-              </li>
-            </ul>
-          </ul>
-        </ul>
-      </div>
-    </div>
-
-  </div>
-</div>
-</section>
-
-<div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer">
-  <!-- Toasts will be dynamically added here -->
-</div>
-
-<section class="summary-section">
-<div class="row mt-4">
-  <div class="col">
-    <div class="subscriptions-container card">
-  <h5 class="card-header">Your Current Subscriptions</h5>
-  <div class="card-body">
-    <ul id="subscriptionList" class="list-group">
-      <!-- Dynamically populated list -->
-    </ul>
-  </div>
-  <div id="emptyState" class="text-muted text-center py-3" style="display: none;">
-    No subscriptions added yet.
-  </div>
-</div>
-    <div id="priceBreakdown" class="price-breakdown-container mt-4">
-  <!-- Price breakdown will be dynamically generated here -->
-</div>
-
-
-  </div>
-</div>
-</section>
+  </section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="script.js"></script>
