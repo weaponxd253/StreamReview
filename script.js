@@ -407,10 +407,10 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast(`Removed ${subscription ? getShortPlanName(subscription.plan) : "subscription"}`);
     displaySubscriptions(subscriptions);
 
-    if (buttonElement) {
-      toggleAddIcon(buttonElement, false);
+    const dropdownButton = buttonElement || getSubscriptionButton(planId);
+    if (dropdownButton) {
+      toggleAddIcon(dropdownButton, false);
     }
-
     highlightSubscription(planId, false);
   }
 
@@ -510,7 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function highlightSubscription(planId, isHighlighted) {
-    const subscriptionButton = document.querySelector(`.add-subscription[data-plan-id="${planId}"]`);
+    const subscriptionButton = getSubscriptionButton(planId);
 
     if (subscriptionButton) {
       const listItem = subscriptionButton.closest(".list-group-item");
@@ -518,6 +518,10 @@ document.addEventListener("DOMContentLoaded", () => {
         listItem.classList.toggle("selected-subscription", isHighlighted);
       }
     }
+  }
+
+  function getSubscriptionButton(planId) {
+    return document.querySelector(`.add-subscription[data-plan-id="${planId}"]`);
   }
 
   function syncDropdownIcons(subscriptions) {
