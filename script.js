@@ -188,7 +188,7 @@ function removeSubscription(plan, buttonElement = null) {
   function calculatePriceComparison(subscriptionPlans) {
     return subscriptionPlans.map((plan) => {
       const monthlyCost = parseFloat(plan.price); // Monthly price
-      const isMonthly = plan.duration === "1 Month";
+      const isMonthly = plan.duration === "Monthly" || plan.duration === "1 Month";
       const isThreeMonth = plan.duration === "3 Months";
       const isYearly = plan.duration === "Yearly";
 
@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <li><strong>Exclusive Discounts:</strong> Special deals in the PlayStation Store.</li>
           <li><strong>Cloud Storage:</strong> 100 GB for your game saves.</li>
         </ul>
-        <p><strong>Pricing:</strong> Monthly: $9.99 | Quarterly: $24.99 | Yearly: $79.99</p>
+        <p><strong>Pricing:</strong> Monthly: $9.99 | Quarterly: $24.99 | Yearly: $59.99</p>
       `,
     },
     extra: {
@@ -312,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <li><strong>Game Catalog:</strong> Access up to 400 PS4 and PS5 games.</li>
           <li><strong>Ubisoft+ Classics:</strong> A curated selection of Ubisoft titles.</li>
         </ul>
-        <p><strong>Pricing:</strong> Monthly: $14.99 | Quarterly: $39.99 | Yearly: $134.99</p>
+        <p><strong>Pricing:</strong> Monthly: $14.99 | Quarterly: $39.99 | Yearly: $99.99</p>
       `,
     },
     premium: {
@@ -324,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <li><strong>Game Trials:</strong> Try new games before buying.</li>
           <li><strong>Cloud Streaming:</strong> Play on PS4, PS5, or PC.</li>
         </ul>
-        <p><strong>Pricing:</strong> Monthly: $17.99 | Quarterly: $49.99 | Yearly: $159.99</p>
+        <p><strong>Pricing:</strong> Monthly: $17.99 | Quarterly: $49.99 | Yearly: $119.99</p>
       `,
     },
   };

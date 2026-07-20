@@ -108,7 +108,7 @@ body {
 }
 
 .nintendoSubHeader .add-subscription:hover{
-  color: var(--nintendo-lght);
+  color: var(--nintendo-light);
 }
 
 #subscriptionList {
@@ -186,11 +186,6 @@ body {
 
 .text-muted {
   color: #888;
-}
-
-#subscriptionList {
-  max-height: 200px;
-  overflow-y: auto;
 }
 
 @keyframes fadeIn {
