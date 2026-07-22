@@ -51,13 +51,32 @@
   </div>
 
   <section class="provider-section" aria-label="Subscription providers">
-    <div class="provider-toolbar" aria-label="Plan filters">
-      <span>Show</span>
-      <div class="filter-group" role="group" aria-label="Filter plans">
-        <button class="filter-button active" type="button" data-filter="all">All</button>
-        <button class="filter-button" type="button" data-filter="selected">Selected</button>
-        <button class="filter-button" type="button" data-filter="monthly">Monthly</button>
-        <button class="filter-button" type="button" data-filter="annual">Annual</button>
+    <div class="provider-toolbar" aria-label="Plan filters and search">
+      <div class="toolbar-field">
+        <label for="planSearch">Search</label>
+        <input id="planSearch" type="search" placeholder="Find plans, tiers, platforms">
+      </div>
+      <div class="toolbar-field">
+        <label for="categoryFilter">Category</label>
+        <select id="categoryFilter">
+          <option value="all">All categories</option>
+          <option value="gaming">Gaming</option>
+          <option value="streaming">Streaming Video</option>
+          <option value="music">Music</option>
+          <option value="cloud">Cloud Storage</option>
+          <option value="software">Software</option>
+          <option value="fitness-learning">Fitness / Learning</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="filter-cluster">
+        <span>Show</span>
+        <div class="filter-group" role="group" aria-label="Filter plans">
+          <button class="filter-button active" type="button" data-filter="all">All</button>
+          <button class="filter-button" type="button" data-filter="selected">Selected</button>
+          <button class="filter-button" type="button" data-filter="monthly">Monthly</button>
+          <button class="filter-button" type="button" data-filter="annual">Annual</button>
+        </div>
       </div>
     </div>
     <div id="providerGrid" class="row provider-grid g-4"></div>
@@ -73,12 +92,13 @@
         <div class="subscriptions-container card">
           <h5 class="card-header">Your Current Subscriptions</h5>
           <div class="card-body">
+            <div id="returnAlerts" class="return-alerts" aria-live="polite"></div>
             <div id="subscriptionOverview" class="subscription-overview"></div>
             <ul id="subscriptionList" class="list-group">
               <!-- Dynamically populated list -->
             </ul>
             <div id="emptyState" class="empty-state" style="display: none;">
-              No subscriptions added yet.
+              Choose a platform plan or add a custom subscription to start.
             </div>
             <div class="decision-tools" id="decisionTools">
               <section class="budget-panel" aria-label="Budget tracker">
@@ -151,6 +171,55 @@
             </div>
           </div>
         </div>
+        <section class="custom-section card" aria-label="Custom subscription">
+          <div class="card-header custom-header">
+            <h5>Add Custom Subscription</h5>
+          </div>
+          <div class="card-body">
+            <form id="customSubscriptionForm" class="custom-form">
+              <label>
+                <span>Name</span>
+                <input id="customName" type="text" maxlength="60" placeholder="Netflix, Spotify, iCloud">
+              </label>
+              <label>
+                <span>Category</span>
+                <select id="customCategory">
+                  <option value="streaming">Streaming Video</option>
+                  <option value="music">Music</option>
+                  <option value="cloud">Cloud Storage</option>
+                  <option value="software">Software</option>
+                  <option value="fitness-learning">Fitness / Learning</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+              <label>
+                <span>Price</span>
+                <input id="customPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="12.99">
+              </label>
+              <label>
+                <span>Billing</span>
+                <select id="customDuration">
+                  <option value="Monthly">Monthly</option>
+                  <option value="3 Months">3 Months</option>
+                  <option value="Yearly">Yearly</option>
+                </select>
+              </label>
+              <label>
+                <span>Renewal</span>
+                <input id="customRenewal" type="date">
+              </label>
+              <label>
+                <span>Notes</span>
+                <input id="customNotes" type="text" maxlength="80" placeholder="Optional">
+              </label>
+              <button class="custom-add-button" type="submit">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                <span>Add Custom</span>
+              </button>
+            </form>
+          </div>
+        </section>
         <section class="scenario-section card" aria-label="Saved scenarios">
           <div class="card-header scenario-header">
             <h5>Saved Scenarios</h5>
@@ -169,6 +238,34 @@
         <div id="priceBreakdown" class="price-breakdown-container mt-4">
           <!-- Price breakdown will be dynamically generated here -->
         </div>
+        <section class="export-section card" aria-label="Export and backup">
+          <div class="card-header export-header">
+            <h5>Export And Backup</h5>
+          </div>
+          <div class="card-body export-actions">
+            <button class="export-button" type="button" id="copySummary">
+              <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              <span>Copy Summary</span>
+            </button>
+            <button class="export-button" type="button" id="downloadCsv">
+              <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
+              <span>Download CSV</span>
+            </button>
+            <button class="export-button" type="button" id="printReport">
+              <i class="fa-solid fa-print" aria-hidden="true"></i>
+              <span>Print Report</span>
+            </button>
+            <button class="export-button" type="button" id="exportBackup">
+              <i class="fa-solid fa-download" aria-hidden="true"></i>
+              <span>Export Backup</span>
+            </button>
+            <label class="import-backup">
+              <i class="fa-solid fa-upload" aria-hidden="true"></i>
+              <span>Import Backup</span>
+              <input id="importBackup" type="file" accept="application/json">
+            </label>
+          </div>
+        </section>
       </div>
     </div>
   </section>

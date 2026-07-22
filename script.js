@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const renewalDatesKey = "streamReviewRenewalDates";
   const gamingHoursKey = "streamReviewGamingHours";
   const scenariosKey = "streamReviewScenarios";
+  const appBackupVersion = 1;
   const {
     calculatePriceComparison,
     formatCurrency,
@@ -19,11 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
   } = window.StreamReviewPriceUtils;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
+  let activeCategory = "all";
+  let activeSearch = "";
 
   const providers = [
     {
       id: "playstation",
       name: "PlayStation Plus",
+      category: "gaming",
       planPrefix: "PlayStation Plus",
       iconClass: "fa-brands fa-playstation",
       buttonId: "ps",
@@ -85,6 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       id: "xbox",
       name: "Xbox Game Pass",
+      category: "gaming",
       planPrefix: "Xbox",
       iconClass: "fa-brands fa-xbox",
       buttonId: "xbox",
@@ -157,6 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     {
       id: "nintendo",
       name: "Nintendo Switch Online",
+      category: "gaming",
       planPrefix: "Nintendo Switch Online",
       iconClass: "fa-solid fa-gamepad",
       buttonId: "nintendo",
@@ -310,6 +316,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (deleteScenarioButton) {
       deleteScenario(deleteScenarioButton.getAttribute("data-scenario-id"));
     }
+
+    const copySummaryButton = e.target.closest("#copySummary");
+    if (copySummaryButton) {
+      copySummaryToClipboard();
+    }
+
+    const downloadCsvButton = e.target.closest("#downloadCsv");
+    if (downloadCsvButton) {
+      downloadCsvExport();
+    }
+
+    const printReportButton = e.target.closest("#printReport");
+    if (printReportButton) {
+      window.print();
+    }
+
+    const exportBackupButton = e.target.closest("#exportBackup");
+    if (exportBackupButton) {
+      exportBackup();
+    }
+  });
+
+  document.body.addEventListener("submit", (e) => {
+    if (e.target.id === "customSubscriptionForm") {
+      e.preventDefault();
+      addCustomSubscription();
+    }
   });
 
   document.body.addEventListener("input", (e) => {
@@ -329,6 +362,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "gamingHours") {
       saveGamingHours(e.target.value);
       updateGamingValue(getStoredSubscriptions());
+    }
+
+    if (e.target.id === "planSearch") {
+      activeSearch = e.target.value.trim().toLowerCase();
+      applyPlanFilter();
+    }
+  });
+
+  document.body.addEventListener("change", (e) => {
+    if (e.target.id === "categoryFilter") {
+      activeCategory = e.target.value || "all";
+      applyPlanFilter();
+    }
+
+    if (e.target.id === "importBackup") {
+      importBackup(e.target.files[0]);
+      e.target.value = "";
     }
   });
 
@@ -370,6 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function createProviderColumn(provider) {
     const column = document.createElement("div");
     column.className = "col-12 col-lg-4 provider-column";
+    column.setAttribute("data-category", provider.category || "gaming");
 
     const buttonRow = document.createElement("div");
     buttonRow.className = "row";
@@ -448,6 +499,8 @@ document.addEventListener("DOMContentLoaded", () => {
     row.className = `list-group-item ${provider.rowClass}`;
     row.setAttribute("data-plan-id", plan.id);
     row.setAttribute("data-duration", normalizeDuration(plan.duration));
+    row.setAttribute("data-category", provider.category || "gaming");
+    row.setAttribute("data-search", `${provider.name} ${tier.name} ${plan.label} ${plan.duration}`.toLowerCase());
 
     const label = document.createElement("div");
     label.className = "fw-bold";
@@ -510,8 +563,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function removeSubscription(planId, buttonElement = null) {
-    const subscriptions = getStoredSubscriptions().filter((subscription) => subscription.id !== planId);
-    const subscription = createSubscription(planId);
+    const currentSubscriptions = getStoredSubscriptions();
+    const subscription = currentSubscriptions.find((item) => item.id === planId) || createSubscription(planId);
+    const subscriptions = currentSubscriptions.filter((item) => item.id !== planId);
 
     removeRenewalDate(planId);
     saveSubscriptions(subscriptions);
@@ -537,6 +591,44 @@ document.addEventListener("DOMContentLoaded", () => {
     syncDropdownIcons([]);
     applyPlanFilter();
     showToast("Cleared selected subscriptions");
+  }
+
+  function addCustomSubscription() {
+    const nameInput = document.getElementById("customName");
+    const categoryInput = document.getElementById("customCategory");
+    const priceInput = document.getElementById("customPrice");
+    const durationInput = document.getElementById("customDuration");
+    const renewalInput = document.getElementById("customRenewal");
+    const notesInput = document.getElementById("customNotes");
+    const price = Number.parseFloat(priceInput.value);
+
+    if (!nameInput.value.trim() || !Number.isFinite(price) || price < 0) {
+      showToast("Add a name and valid price for the custom subscription", "error");
+      return;
+    }
+
+    const subscription = normalizeCustomSubscription({
+      id: `custom-${Date.now()}`,
+      custom: true,
+      name: nameInput.value,
+      category: categoryInput.value,
+      price: priceInput.value,
+      duration: durationInput.value,
+      notes: notesInput.value,
+    });
+
+    const subscriptions = getStoredSubscriptions();
+    subscriptions.push(subscription);
+    saveSubscriptions(subscriptions);
+
+    if (renewalInput.value) {
+      saveRenewalDate(subscription.id, renewalInput.value);
+    }
+
+    document.getElementById("customSubscriptionForm").reset();
+    displaySubscriptions(subscriptions);
+    syncDropdownIcons(subscriptions);
+    showToast(`Added ${subscription.name}`);
   }
 
   function loadSubscriptions() {
@@ -587,6 +679,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function normalizeSubscription(subscription) {
+    if (subscription && subscription.custom) {
+      return normalizeCustomSubscription(subscription);
+    }
+
     const planId = resolvePlanId(subscription);
     if (planId && planById.has(planId)) {
       return createSubscription(planId);
@@ -603,6 +699,31 @@ document.addEventListener("DOMContentLoaded", () => {
       duration: normalizeDuration(subscription.duration),
       providerId: subscription.providerId || "legacy",
       tierId: subscription.tierId || "legacy",
+      category: subscription.category || "custom",
+      notes: subscription.notes || "",
+    };
+  }
+
+  function normalizeCustomSubscription(subscription) {
+    const price = Number.parseFloat(subscription.price);
+    const name = String(subscription.name || subscription.plan || "").trim();
+    const duration = normalizeDuration(subscription.duration);
+
+    if (!name || !Number.isFinite(price) || price < 0 || !duration) {
+      return null;
+    }
+
+    return {
+      id: subscription.id || `custom-${Date.now()}`,
+      custom: true,
+      name,
+      plan: name,
+      price: formatPrice(price),
+      duration,
+      providerId: "custom",
+      tierId: subscription.category || "custom",
+      category: subscription.category || "custom",
+      notes: subscription.notes || "",
     };
   }
 
@@ -636,6 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
       duration: plan.duration,
       providerId: provider.id,
       tierId: tier.id,
+      category: provider.category || "gaming",
     };
   }
 
@@ -677,14 +799,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     planRows.forEach((row) => {
       const duration = row.getAttribute("data-duration");
+      const category = row.getAttribute("data-category") || "gaming";
+      const searchableText = row.getAttribute("data-search") || "";
       const isSelected = row.classList.contains("selected-subscription");
       const shouldShow =
-        activeFilter === "all" ||
-        (activeFilter === "selected" && isSelected) ||
-        (activeFilter === "monthly" && duration === "Monthly") ||
-        (activeFilter === "annual" && duration === "Yearly");
+        (activeFilter === "all" ||
+          (activeFilter === "selected" && isSelected) ||
+          (activeFilter === "monthly" && duration === "Monthly") ||
+          (activeFilter === "annual" && duration === "Yearly")) &&
+        (activeCategory === "all" || category === activeCategory) &&
+        (!activeSearch || searchableText.includes(activeSearch));
 
       row.classList.toggle("plan-hidden", !shouldShow);
+    });
+
+    document.querySelectorAll(".provider-column").forEach((column) => {
+      const visibleRows = column.querySelectorAll(".list-group-item[data-plan-id]:not(.plan-hidden)");
+      const category = column.getAttribute("data-category") || "gaming";
+      const shouldShowColumn = visibleRows.length > 0 && (activeCategory === "all" || category === activeCategory);
+      column.classList.toggle("plan-hidden", !shouldShowColumn);
     });
   }
 
@@ -722,6 +855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     subscriptionOverview.textContent = "";
     updateStickySummary(subscriptions);
     updateDecisionTools(subscriptions);
+    renderReturnAlerts(subscriptions);
 
     if (subscriptions.length === 0) {
       emptyState.style.display = "block";
@@ -919,6 +1053,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function renderReturnAlerts(subscriptions) {
+    const alerts = document.getElementById("returnAlerts");
+    const budget = getStoredBudget();
+    const budgetAmount = Number.parseFloat(budget.amount);
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const renewalDates = getStoredRenewalDates();
+    const charges = getUpcomingCharges(subscriptions, renewalDates, new Date(), 7);
+    const messages = [];
+
+    if (charges.some((charge) => charge.daysUntil === 0)) {
+      messages.push("A renewal is due today.");
+    } else if (charges.length) {
+      messages.push(`${charges.length} renewal${charges.length === 1 ? "" : "s"} coming in the next 7 days.`);
+    }
+
+    if (Number.isFinite(budgetAmount) && budgetAmount > 0) {
+      const spend = budget.type === "monthly" ? summary.monthlyAverage : summary.twelveMonthProjection;
+      if (spend > budgetAmount) {
+        messages.push("Your current setup is over budget.");
+      }
+    }
+
+    if (subscriptions.length && Object.keys(getSelectedRenewalDates(subscriptions)).length === 0) {
+      messages.push("Add renewal dates to unlock charge alerts.");
+    }
+
+    if (subscriptions.length && !getStoredScenarios().length) {
+      messages.push("Save a scenario to compare this setup later.");
+    }
+
+    alerts.textContent = "";
+    messages.slice(0, 3).forEach((message) => {
+      const alert = document.createElement("div");
+      alert.className = "return-alert";
+      alert.textContent = message;
+      alerts.appendChild(alert);
+    });
+  }
+
   function loadGamingValue() {
     const gamingHours = document.getElementById("gamingHours");
     gamingHours.value = getStoredGamingHours();
@@ -988,6 +1161,7 @@ document.addEventListener("DOMContentLoaded", () => {
       id: `scenario-${Date.now()}`,
       name,
       subscriptionIds: subscriptions.map((subscription) => subscription.id),
+      subscriptions,
       budget: getStoredBudget(),
       renewalDates: getSelectedRenewalDates(subscriptions),
       gamingHours: getStoredGamingHours(),
@@ -1008,9 +1182,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const subscriptions = scenario.subscriptionIds
-      .map((planId) => createSubscription(planId))
-      .filter(Boolean);
+    const subscriptions = getScenarioSubscriptions(scenario);
 
     saveSubscriptions(subscriptions);
     saveBudget(scenario.budget || { type: "monthly", amount: "" });
@@ -1047,12 +1219,11 @@ document.addEventListener("DOMContentLoaded", () => {
     scenarios.forEach((scenario) => {
       scenarioList.appendChild(createScenarioCard(scenario));
     });
+    scenarioList.appendChild(createScenarioComparisonTable(scenarios));
   }
 
   function createScenarioCard(scenario) {
-    const subscriptions = scenario.subscriptionIds
-      .map((planId) => createSubscription(planId))
-      .filter(Boolean);
+    const subscriptions = getScenarioSubscriptions(scenario);
     const summary = summarizeSubscriptionCosts(subscriptions);
     const card = document.createElement("article");
     card.className = "scenario-card";
@@ -1089,6 +1260,99 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
+  function getScenarioSubscriptions(scenario) {
+    if (Array.isArray(scenario.subscriptions)) {
+      return normalizeSubscriptions(scenario.subscriptions);
+    }
+
+    return (scenario.subscriptionIds || [])
+      .map((planId) => createSubscription(planId))
+      .filter(Boolean);
+  }
+
+  function createScenarioComparisonTable(scenarios) {
+    const wrap = document.createElement("div");
+    wrap.className = "scenario-table-wrap";
+
+    const table = document.createElement("table");
+    table.className = "scenario-table";
+
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    ["Scenario", "Plans", "Due Today", "Monthly Avg", "12-Month", "Next 30", "Next 90", "Value"].forEach((label) => {
+      const th = document.createElement("th");
+      th.textContent = label;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    const rows = scenarios.map((scenario) => {
+      const subscriptions = getScenarioSubscriptions(scenario);
+      const summary = summarizeSubscriptionCosts(subscriptions);
+      const charges = getUpcomingCharges(subscriptions, scenario.renewalDates || {}, new Date(), 90);
+      const nextThirty = charges
+        .filter((charge) => charge.daysUntil <= 30)
+        .reduce((sum, charge) => sum + charge.price, 0);
+      const nextNinety = charges.reduce((sum, charge) => sum + charge.price, 0);
+      return {
+        scenario,
+        subscriptions,
+        summary,
+        nextThirty,
+        nextNinety,
+        value: getScenarioValueRating(summary, scenario.gamingHours),
+      };
+    });
+
+    const cheapestTwelve = Math.min(...rows.map((row) => row.summary.twelveMonthProjection));
+
+    const tbody = document.createElement("tbody");
+    rows.forEach((rowData) => {
+      const row = document.createElement("tr");
+      if (rowData.summary.twelveMonthProjection === cheapestTwelve) {
+        row.className = "best-scenario";
+      }
+
+      [
+        rowData.scenario.name,
+        String(rowData.subscriptions.length),
+        rowData.summary.dueTodayFormatted,
+        rowData.summary.monthlyAverageFormatted,
+        rowData.summary.twelveMonthProjectionFormatted,
+        formatCurrency(rowData.nextThirty),
+        formatCurrency(rowData.nextNinety),
+        rowData.value,
+      ].forEach((value) => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+      tbody.appendChild(row);
+    });
+
+    table.append(thead, tbody);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  function getScenarioValueRating(summary, hoursValue) {
+    const hours = Number.parseFloat(hoursValue);
+    if (!Number.isFinite(hours) || hours <= 0 || summary.monthlyAverage <= 0) {
+      return "No hours";
+    }
+
+    const hourlyCost = summary.monthlyAverage / hours;
+    if (hourlyCost <= 2) {
+      return "Great";
+    }
+
+    if (hourlyCost <= 5) {
+      return "Good";
+    }
+
+    return "Watch";
+  }
+
   function createScenarioMetric(label, value) {
     const metric = document.createElement("div");
     const metricLabel = document.createElement("span");
@@ -1099,6 +1363,132 @@ document.addEventListener("DOMContentLoaded", () => {
 
     metric.append(metricLabel, metricValue);
     return metric;
+  }
+
+  function getBackupPayload() {
+    return {
+      version: appBackupVersion,
+      exportedAt: new Date().toISOString(),
+      subscriptions: getStoredSubscriptions(),
+      budget: getStoredBudget(),
+      renewalDates: getStoredRenewalDates(),
+      gamingHours: getStoredGamingHours(),
+      scenarios: getStoredScenarios(),
+    };
+  }
+
+  function buildSummaryText() {
+    const subscriptions = getStoredSubscriptions();
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const renewalDates = getStoredRenewalDates();
+    const charges = getUpcomingCharges(subscriptions, renewalDates, new Date(), 90);
+    const lines = [
+      "StreamReview Summary",
+      `Selected subscriptions: ${subscriptions.length}`,
+      `Due today: ${summary.dueTodayFormatted}`,
+      `Monthly average: ${summary.monthlyAverageFormatted}`,
+      `Projected 12-month cost: ${summary.twelveMonthProjectionFormatted}`,
+      "",
+      "Subscriptions:",
+      ...subscriptions.map((subscription) => {
+        const renewal = renewalDates[subscription.id] ? `, renews ${renewalDates[subscription.id]}` : "";
+        return `- ${subscription.plan}: $${subscription.price} ${subscription.duration}${renewal}`;
+      }),
+      "",
+      "Upcoming charges:",
+      ...(charges.length ? charges.slice(0, 8).map((charge) => `- ${charge.date}: ${charge.plan} ${charge.priceFormatted}`) : ["- None tracked"]),
+    ];
+
+    return lines.join("\n");
+  }
+
+  function copySummaryToClipboard() {
+    const summary = buildSummaryText();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summary)
+        .then(() => showToast("Copied summary"))
+        .catch(() => showToast("Clipboard copy failed", "error"));
+      return;
+    }
+
+    showToast("Clipboard copy is not available in this browser", "error");
+  }
+
+  function downloadCsvExport() {
+    const subscriptions = getStoredSubscriptions();
+    const renewalDates = getStoredRenewalDates();
+    const rows = [
+      ["Name", "Category", "Price", "Billing", "Renewal Date", "Notes"],
+      ...subscriptions.map((subscription) => [
+        subscription.plan,
+        getCategoryLabel(subscription.category || "gaming"),
+        subscription.price,
+        subscription.duration,
+        renewalDates[subscription.id] || "",
+        subscription.notes || "",
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+    downloadTextFile("streamreview-subscriptions.csv", csv, "text/csv");
+  }
+
+  function exportBackup() {
+    downloadTextFile(
+      "streamreview-backup.json",
+      JSON.stringify(getBackupPayload(), null, 2),
+      "application/json"
+    );
+  }
+
+  function importBackup(file) {
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        restoreBackup(parsed);
+        showToast("Backup imported");
+      } catch {
+        showToast("Backup import failed", "error");
+      }
+    });
+    reader.readAsText(file);
+  }
+
+  function restoreBackup(backup) {
+    const subscriptions = normalizeSubscriptions(backup.subscriptions || []);
+    saveSubscriptions(subscriptions);
+    saveBudget(backup.budget || { type: "monthly", amount: "" });
+    saveRenewalDates(backup.renewalDates || {});
+    saveGamingHours(backup.gamingHours || "");
+    saveScenarios(Array.isArray(backup.scenarios) ? backup.scenarios : []);
+    displaySubscriptions(subscriptions);
+    syncDropdownIcons(subscriptions);
+    loadBudgetControls();
+    loadGamingValue();
+    renderScenarios();
+    applyPlanFilter();
+  }
+
+  function downloadTextFile(filename, contents, mimeType) {
+    const blob = new Blob([contents], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function escapeCsvCell(value) {
+    const text = String(value ?? "");
+    return `"${text.replace(/"/g, '""')}"`;
   }
 
   function renderInsights(subscriptions) {
@@ -1313,8 +1703,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     subscriptions.forEach((subscription) => {
       const provider = providers.find((item) => item.id === subscription.providerId) || {
-        id: "legacy",
-        name: "Other Subscriptions",
+        id: subscription.custom ? `custom-${subscription.category || "custom"}` : subscription.providerId || "legacy",
+        name: subscription.custom ? getCategoryLabel(subscription.category) : "Other Subscriptions",
       };
 
       if (!groups.has(provider.id)) {
@@ -1434,12 +1824,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getSubscriptionSummaryName(subscription) {
+    if (subscription.custom) {
+      return subscription.name || subscription.plan;
+    }
+
     const record = planById.get(subscription.id);
     if (!record) {
       return subscription.plan;
     }
 
     return `${record.tier.name} - ${record.plan.label}`;
+  }
+
+  function getCategoryLabel(category) {
+    const labels = {
+      gaming: "Gaming",
+      streaming: "Streaming Video",
+      music: "Music",
+      cloud: "Cloud Storage",
+      software: "Software",
+      "fitness-learning": "Fitness / Learning",
+      custom: "Custom",
+    };
+
+    return labels[category] || "Custom";
   }
 
   function displayPriceComparison(subscriptionPlans) {
