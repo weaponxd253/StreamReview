@@ -1,13 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
   const subscriptionsKey = "userSubscriptions";
   const budgetKey = "streamReviewBudget";
+  const renewalDatesKey = "streamReviewRenewalDates";
+  const gamingHoursKey = "streamReviewGamingHours";
+  const scenariosKey = "streamReviewScenarios";
   const {
     calculatePriceComparison,
     formatCurrency,
+    formatDateInput,
     getBestTwelveMonthProjection,
     getComparableCost,
+    getDaysUntil,
+    getNextRenewalDate,
     normalizeDuration,
+    parseCurrency,
     summarizeSubscriptionCosts,
+    getUpcomingCharges,
   } = window.StreamReviewPriceUtils;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
@@ -287,6 +295,21 @@ document.addEventListener("DOMContentLoaded", () => {
     if (betterButton) {
       showBetterRecommendation(getStoredSubscriptions());
     }
+
+    const saveScenarioButton = e.target.closest(".scenario-save-button");
+    if (saveScenarioButton) {
+      saveCurrentScenario();
+    }
+
+    const loadScenarioButton = e.target.closest(".load-scenario");
+    if (loadScenarioButton) {
+      loadScenario(loadScenarioButton.getAttribute("data-scenario-id"));
+    }
+
+    const deleteScenarioButton = e.target.closest(".delete-scenario");
+    if (deleteScenarioButton) {
+      deleteScenario(deleteScenarioButton.getAttribute("data-scenario-id"));
+    }
   });
 
   document.body.addEventListener("input", (e) => {
@@ -295,6 +318,17 @@ document.addEventListener("DOMContentLoaded", () => {
       budget.amount = e.target.value;
       saveBudget(budget);
       updateBudgetControls(getStoredSubscriptions());
+    }
+
+    if (e.target.classList.contains("renewal-date-input")) {
+      const planId = e.target.getAttribute("data-plan-id");
+      saveRenewalDate(planId, e.target.value);
+      displaySubscriptions(getStoredSubscriptions());
+    }
+
+    if (e.target.id === "gamingHours") {
+      saveGamingHours(e.target.value);
+      updateGamingValue(getStoredSubscriptions());
     }
   });
 
@@ -479,6 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const subscriptions = getStoredSubscriptions().filter((subscription) => subscription.id !== planId);
     const subscription = createSubscription(planId);
 
+    removeRenewalDate(planId);
     saveSubscriptions(subscriptions);
     showToast(`Removed ${subscription ? getShortPlanName(subscription.plan) : "subscription"}`);
     displaySubscriptions(subscriptions);
@@ -497,6 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     saveSubscriptions([]);
+    saveRenewalDates({});
     displaySubscriptions([]);
     syncDropdownIcons([]);
     applyPlanFilter();
@@ -509,6 +545,8 @@ document.addEventListener("DOMContentLoaded", () => {
     displaySubscriptions(subscriptions);
     syncDropdownIcons(subscriptions);
     loadBudgetControls();
+    loadGamingValue();
+    renderScenarios();
     updateFilterButtons();
     applyPlanFilter();
   }
@@ -722,6 +760,8 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBudgetControls(subscriptions);
     renderInsights(subscriptions);
     renderBetterResult(subscriptions, false);
+    renderUpcomingCharges(subscriptions);
+    updateGamingValue(subscriptions);
 
     const betterButton = document.getElementById("betterButton");
     betterButton.disabled = subscriptions.length === 0;
@@ -789,6 +829,276 @@ document.addEventListener("DOMContentLoaded", () => {
 
     budgetStatus.className = "budget-status under";
     budgetStatus.textContent = `Under budget by ${formatCurrency(difference)} against your ${label}.`;
+  }
+
+  function getStoredRenewalDates() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(renewalDatesKey));
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveRenewalDates(renewalDates) {
+    localStorage.setItem(renewalDatesKey, JSON.stringify(renewalDates));
+  }
+
+  function saveRenewalDate(planId, renewalDate) {
+    if (!planId) {
+      return;
+    }
+
+    const renewalDates = getStoredRenewalDates();
+    if (renewalDate) {
+      renewalDates[planId] = renewalDate;
+    } else {
+      delete renewalDates[planId];
+    }
+    saveRenewalDates(renewalDates);
+  }
+
+  function removeRenewalDate(planId) {
+    const renewalDates = getStoredRenewalDates();
+    delete renewalDates[planId];
+    saveRenewalDates(renewalDates);
+  }
+
+  function getSelectedRenewalDates(subscriptions) {
+    const selectedIds = new Set(subscriptions.map((subscription) => subscription.id));
+    const renewalDates = getStoredRenewalDates();
+
+    return Object.fromEntries(
+      Object.entries(renewalDates).filter(([planId]) => selectedIds.has(planId))
+    );
+  }
+
+  function renderUpcomingCharges(subscriptions) {
+    const chargesList = document.getElementById("upcomingChargesList");
+    const nextChargeBadge = document.getElementById("nextChargeBadge");
+    const nextThirtyTotal = document.getElementById("nextThirtyTotal");
+    const nextNinetyTotal = document.getElementById("nextNinetyTotal");
+    const renewalDates = getStoredRenewalDates();
+    const charges = getUpcomingCharges(subscriptions, renewalDates, new Date(), 90);
+    const thirtyDayTotal = charges
+      .filter((charge) => charge.daysUntil <= 30)
+      .reduce((sum, charge) => sum + charge.price, 0);
+    const ninetyDayTotal = charges.reduce((sum, charge) => sum + charge.price, 0);
+
+    chargesList.textContent = "";
+    nextThirtyTotal.textContent = formatCurrency(thirtyDayTotal);
+    nextNinetyTotal.textContent = formatCurrency(ninetyDayTotal);
+
+    if (!charges.length) {
+      nextChargeBadge.textContent = subscriptions.length ? "Add dates" : "No dates";
+      const emptyItem = document.createElement("li");
+      emptyItem.className = "upcoming-empty";
+      emptyItem.textContent = subscriptions.length
+        ? "Add renewal dates to selected plans."
+        : "Select plans to track upcoming charges.";
+      chargesList.appendChild(emptyItem);
+      return;
+    }
+
+    nextChargeBadge.textContent = `Next: ${formatShortDate(charges[0].date)}`;
+    charges.slice(0, 5).forEach((charge) => {
+      const item = document.createElement("li");
+      const details = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = getShortPlanName(charge.plan);
+
+      const date = document.createElement("span");
+      date.textContent = `${formatShortDate(charge.date)} - ${formatDaysUntil(charge.daysUntil)}`;
+      details.append(name, date);
+
+      const amount = document.createElement("strong");
+      amount.textContent = charge.priceFormatted;
+
+      item.append(details, amount);
+      chargesList.appendChild(item);
+    });
+  }
+
+  function loadGamingValue() {
+    const gamingHours = document.getElementById("gamingHours");
+    gamingHours.value = getStoredGamingHours();
+    updateGamingValue(getStoredSubscriptions());
+  }
+
+  function getStoredGamingHours() {
+    return localStorage.getItem(gamingHoursKey) || "";
+  }
+
+  function saveGamingHours(hours) {
+    localStorage.setItem(gamingHoursKey, hours || "");
+  }
+
+  function updateGamingValue(subscriptions) {
+    const hours = Number.parseFloat(getStoredGamingHours());
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const valueRating = document.getElementById("valueRating");
+    const costPerHour = document.getElementById("costPerHour");
+    const costPerWeek = document.getElementById("costPerWeek");
+    const weeklyCost = summary.monthlyAverage / 4.345;
+
+    costPerWeek.textContent = formatCurrency(weeklyCost);
+
+    if (!Number.isFinite(hours) || hours <= 0 || summary.monthlyAverage <= 0) {
+      valueRating.textContent = hours > 0 ? "No plans" : "No hours";
+      costPerHour.textContent = "$0.00";
+      return;
+    }
+
+    const hourlyCost = summary.monthlyAverage / hours;
+    costPerHour.textContent = formatCurrency(hourlyCost);
+
+    if (hourlyCost <= 2) {
+      valueRating.textContent = "Great value";
+    } else if (hourlyCost <= 5) {
+      valueRating.textContent = "Good value";
+    } else {
+      valueRating.textContent = "Watch spend";
+    }
+  }
+
+  function getStoredScenarios() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(scenariosKey));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveScenarios(scenarios) {
+    localStorage.setItem(scenariosKey, JSON.stringify(scenarios));
+  }
+
+  function saveCurrentScenario() {
+    const subscriptions = getStoredSubscriptions();
+    if (!subscriptions.length) {
+      showToast("Select at least one plan before saving a scenario", "error");
+      return;
+    }
+
+    const scenarioName = document.getElementById("scenarioName");
+    const scenarios = getStoredScenarios();
+    const name = scenarioName.value.trim() || `Scenario ${scenarios.length + 1}`;
+    const scenario = {
+      id: `scenario-${Date.now()}`,
+      name,
+      subscriptionIds: subscriptions.map((subscription) => subscription.id),
+      budget: getStoredBudget(),
+      renewalDates: getSelectedRenewalDates(subscriptions),
+      gamingHours: getStoredGamingHours(),
+      createdAt: formatDateInput(new Date()),
+    };
+
+    scenarios.unshift(scenario);
+    saveScenarios(scenarios.slice(0, 8));
+    scenarioName.value = "";
+    renderScenarios();
+    showToast(`Saved ${name}`);
+  }
+
+  function loadScenario(scenarioId) {
+    const scenario = getStoredScenarios().find((item) => item.id === scenarioId);
+    if (!scenario) {
+      showToast("Scenario could not be loaded", "error");
+      return;
+    }
+
+    const subscriptions = scenario.subscriptionIds
+      .map((planId) => createSubscription(planId))
+      .filter(Boolean);
+
+    saveSubscriptions(subscriptions);
+    saveBudget(scenario.budget || { type: "monthly", amount: "" });
+    saveRenewalDates(scenario.renewalDates || {});
+    saveGamingHours(scenario.gamingHours || "");
+    displaySubscriptions(subscriptions);
+    syncDropdownIcons(subscriptions);
+    loadBudgetControls();
+    loadGamingValue();
+    applyPlanFilter();
+    showToast(`Loaded ${scenario.name}`);
+  }
+
+  function deleteScenario(scenarioId) {
+    const scenarios = getStoredScenarios();
+    const nextScenarios = scenarios.filter((scenario) => scenario.id !== scenarioId);
+    saveScenarios(nextScenarios);
+    renderScenarios();
+  }
+
+  function renderScenarios() {
+    const scenarioList = document.getElementById("scenarioList");
+    const scenarios = getStoredScenarios();
+    scenarioList.textContent = "";
+
+    if (!scenarios.length) {
+      const empty = document.createElement("div");
+      empty.className = "scenario-empty";
+      empty.textContent = "Save your current setup to compare it later.";
+      scenarioList.appendChild(empty);
+      return;
+    }
+
+    scenarios.forEach((scenario) => {
+      scenarioList.appendChild(createScenarioCard(scenario));
+    });
+  }
+
+  function createScenarioCard(scenario) {
+    const subscriptions = scenario.subscriptionIds
+      .map((planId) => createSubscription(planId))
+      .filter(Boolean);
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const card = document.createElement("article");
+    card.className = "scenario-card";
+
+    const title = document.createElement("h6");
+    title.textContent = scenario.name;
+
+    const meta = document.createElement("div");
+    meta.className = "scenario-meta";
+    meta.append(
+      createScenarioMetric("Plans", String(subscriptions.length)),
+      createScenarioMetric("Monthly Avg", summary.monthlyAverageFormatted),
+      createScenarioMetric("12-Month", summary.twelveMonthProjectionFormatted)
+    );
+
+    const actions = document.createElement("div");
+    actions.className = "scenario-actions";
+
+    const loadButton = document.createElement("button");
+    loadButton.className = "load-scenario";
+    loadButton.type = "button";
+    loadButton.setAttribute("data-scenario-id", scenario.id);
+    loadButton.textContent = "Load";
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-scenario";
+    deleteButton.type = "button";
+    deleteButton.setAttribute("data-scenario-id", scenario.id);
+    deleteButton.setAttribute("aria-label", `Delete ${scenario.name}`);
+    deleteButton.innerHTML = '<i class="fa-solid fa-trash" aria-hidden="true"></i>';
+
+    actions.append(loadButton, deleteButton);
+    card.append(title, meta, actions);
+    return card;
+  }
+
+  function createScenarioMetric(label, value) {
+    const metric = document.createElement("div");
+    const metricLabel = document.createElement("span");
+    metricLabel.textContent = label;
+
+    const metricValue = document.createElement("strong");
+    metricValue.textContent = value;
+
+    metric.append(metricLabel, metricValue);
+    return metric;
   }
 
   function renderInsights(subscriptions) {
@@ -1060,7 +1370,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const meta = document.createElement("span");
     meta.textContent = `$${subscription.price} ${subscription.duration}`;
-    details.append(name, meta);
+
+    const renewal = createRenewalControl(subscription);
+    details.append(name, meta, renewal);
 
     const removeButton = document.createElement("button");
     removeButton.className = "remove-subscription";
@@ -1076,6 +1388,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     item.append(details, removeButton);
     return item;
+  }
+
+  function createRenewalControl(subscription) {
+    const renewalDates = getStoredRenewalDates();
+    const renewalWrap = document.createElement("div");
+    renewalWrap.className = "renewal-control";
+
+    const label = document.createElement("label");
+    label.setAttribute("for", `renewal-${subscription.id}`);
+    label.textContent = "Renews";
+
+    const input = document.createElement("input");
+    input.className = "renewal-date-input";
+    input.id = `renewal-${subscription.id}`;
+    input.type = "date";
+    input.setAttribute("data-plan-id", subscription.id);
+    input.value = renewalDates[subscription.id] || "";
+
+    const status = document.createElement("span");
+    status.className = "renewal-status";
+    status.textContent = getRenewalStatus(subscription, input.value);
+
+    renewalWrap.append(label, input, status);
+    return renewalWrap;
+  }
+
+  function getRenewalStatus(subscription, renewalDate) {
+    const nextRenewal = getNextRenewalDate(renewalDate, subscription.duration);
+    const daysUntil = getDaysUntil(nextRenewal);
+
+    if (!nextRenewal || !Number.isFinite(daysUntil)) {
+      return "Add date";
+    }
+
+    if (daysUntil === 0) {
+      return "Due today";
+    }
+
+    if (daysUntil === 1) {
+      return "1 day left";
+    }
+
+    return `${daysUntil} days left`;
   }
 
   function getSubscriptionSummaryName(subscription) {
@@ -1274,6 +1629,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getShortPlanName(plan) {
     return plan.replace(/\s-\s(?:Monthly|3 Months|Yearly(?: \(Up to 8 accounts\))?)$/, "");
+  }
+
+  function formatShortDate(dateValue) {
+    const date = new Date(`${dateValue}T00:00:00`);
+    if (Number.isNaN(date.getTime())) {
+      return "No date";
+    }
+
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  function formatDaysUntil(daysUntil) {
+    if (daysUntil === 0) {
+      return "due today";
+    }
+
+    if (daysUntil === 1) {
+      return "1 day left";
+    }
+
+    return `${daysUntil} days left`;
   }
 
   function getTierPricing(tier) {

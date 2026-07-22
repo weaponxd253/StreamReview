@@ -1,11 +1,18 @@
 const assert = require("node:assert/strict");
 const {
+  addMonths,
   calculatePriceComparison,
+  formatDateInput,
   formatCurrency,
   getBestTwelveMonthProjection,
+  getBillingIntervalMonths,
   getComparableCost,
+  getDaysUntil,
+  getNextRenewalDate,
   getProjectedCosts,
+  getUpcomingCharges,
   normalizeDuration,
+  parseDateOnly,
   parseCurrency,
   summarizeSubscriptionCosts,
 } = require("../price-utils");
@@ -145,4 +152,40 @@ test("summarizes selected subscription totals", () => {
   assert.equal(summary.dueTodayFormatted, "$81.97");
   assert.equal(summary.monthlyAverageFormatted, "$17.49");
   assert.equal(summary.twelveMonthProjectionFormatted, "$209.83");
+});
+
+test("calculates billing intervals and date helpers", () => {
+  assert.equal(getBillingIntervalMonths("Monthly"), 1);
+  assert.equal(getBillingIntervalMonths("3 Months"), 3);
+  assert.equal(getBillingIntervalMonths("Yearly"), 12);
+  assert.equal(formatDateInput(addMonths(parseDateOnly("2026-01-31"), 1)), "2026-02-28");
+});
+
+test("finds next renewal date from an original renewal date", () => {
+  const today = parseDateOnly("2026-07-22");
+
+  assert.equal(formatDateInput(getNextRenewalDate("2026-07-10", "Monthly", today)), "2026-08-10");
+  assert.equal(formatDateInput(getNextRenewalDate("2026-06-01", "3 Months", today)), "2026-09-01");
+  assert.equal(getDaysUntil("2026-07-30", today), 8);
+});
+
+test("builds upcoming charge list inside a window", () => {
+  const charges = getUpcomingCharges(
+    [
+      { id: "monthly", plan: "Monthly Plan", price: "10.00", duration: "Monthly" },
+      { id: "yearly", plan: "Yearly Plan", price: "80.00", duration: "Yearly" },
+    ],
+    {
+      monthly: "2026-07-30",
+      yearly: "2026-12-01",
+    },
+    parseDateOnly("2026-07-22"),
+    90
+  );
+
+  assert.deepEqual(
+    charges.map((charge) => charge.date),
+    ["2026-07-30", "2026-08-30", "2026-09-30"]
+  );
+  assert.equal(charges.reduce((sum, charge) => sum + charge.price, 0), 30);
 });

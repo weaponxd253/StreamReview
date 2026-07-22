@@ -108,9 +108,64 @@
                 <div id="betterResult" class="better-result muted-result">Select plans to see savings opportunities.</div>
                 <div id="insightsPanel" class="insights-grid"></div>
               </section>
+
+              <section class="upcoming-panel" aria-label="Upcoming charges">
+                <div class="panel-heading">
+                  <h6>Upcoming Charges</h6>
+                  <span id="nextChargeBadge" class="panel-badge">No dates</span>
+                </div>
+                <div class="charge-metrics">
+                  <div>
+                    <span>Next 30 Days</span>
+                    <strong id="nextThirtyTotal">$0.00</strong>
+                  </div>
+                  <div>
+                    <span>Next 90 Days</span>
+                    <strong id="nextNinetyTotal">$0.00</strong>
+                  </div>
+                </div>
+                <ul id="upcomingChargesList" class="upcoming-list"></ul>
+              </section>
+
+              <section class="value-panel" aria-label="Gaming value calculator">
+                <div class="panel-heading">
+                  <h6>Gaming Value</h6>
+                  <span id="valueRating" class="panel-badge">No hours</span>
+                </div>
+                <label class="budget-input-label" for="gamingHours">Monthly gaming hours</label>
+                <div class="budget-input-wrap">
+                  <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                  <input id="gamingHours" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
+                </div>
+                <div class="value-metrics">
+                  <div>
+                    <span>Per Hour</span>
+                    <strong id="costPerHour">$0.00</strong>
+                  </div>
+                  <div>
+                    <span>Per Week</span>
+                    <strong id="costPerWeek">$0.00</strong>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
+        <section class="scenario-section card" aria-label="Saved scenarios">
+          <div class="card-header scenario-header">
+            <h5>Saved Scenarios</h5>
+            <div class="scenario-save">
+              <input id="scenarioName" type="text" maxlength="40" placeholder="Scenario name">
+              <button class="scenario-save-button" type="button" id="saveScenario">
+                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                <span>Save</span>
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="scenarioList" class="scenario-grid"></div>
+          </div>
+        </section>
         <div id="priceBreakdown" class="price-breakdown-container mt-4">
           <!-- Price breakdown will be dynamically generated here -->
         </div>
