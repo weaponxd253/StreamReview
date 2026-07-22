@@ -1,10 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   const subscriptionsKey = "userSubscriptions";
+  const budgetKey = "streamReviewBudget";
   const {
     calculatePriceComparison,
+    formatCurrency,
     getBestTwelveMonthProjection,
+    getComparableCost,
     normalizeDuration,
+    summarizeSubscriptionCosts,
   } = window.StreamReviewPriceUtils;
+  let activeComparisonMode = "twelveMonth";
+  let activeFilter = "all";
 
   const providers = [
     {
@@ -250,6 +256,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
       removeSubscription(planId);
     }
+
+    const resetButton = e.target.closest(".reset-subscriptions");
+    if (resetButton) {
+      clearSubscriptions();
+    }
+
+    const comparisonButton = e.target.closest(".comparison-mode");
+    if (comparisonButton) {
+      activeComparisonMode = comparisonButton.getAttribute("data-mode") || "twelveMonth";
+      displayPriceComparison(getStoredSubscriptions());
+    }
+
+    const filterButton = e.target.closest(".filter-button");
+    if (filterButton) {
+      activeFilter = filterButton.getAttribute("data-filter") || "all";
+      updateFilterButtons();
+      applyPlanFilter();
+    }
+
+    const budgetTypeButton = e.target.closest(".budget-type");
+    if (budgetTypeButton) {
+      const budget = getStoredBudget();
+      budget.type = budgetTypeButton.getAttribute("data-budget-type") || "monthly";
+      saveBudget(budget);
+      updateBudgetControls(getStoredSubscriptions());
+    }
+
+    const betterButton = e.target.closest(".better-button");
+    if (betterButton) {
+      showBetterRecommendation(getStoredSubscriptions());
+    }
+  });
+
+  document.body.addEventListener("input", (e) => {
+    if (e.target.id === "budgetAmount") {
+      const budget = getStoredBudget();
+      budget.amount = e.target.value;
+      saveBudget(budget);
+      updateBudgetControls(getStoredSubscriptions());
+    }
   });
 
   function buildIndexes(providerData) {
@@ -366,6 +412,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function createPlanRow(provider, tier, plan) {
     const row = document.createElement("li");
     row.className = `list-group-item ${provider.rowClass}`;
+    row.setAttribute("data-plan-id", plan.id);
+    row.setAttribute("data-duration", normalizeDuration(plan.duration));
 
     const label = document.createElement("div");
     label.className = "fw-bold";
@@ -376,7 +424,13 @@ document.addEventListener("DOMContentLoaded", () => {
     dollarIcon.setAttribute("aria-hidden", "true");
 
     const price = document.createElement("span");
+    price.className = "plan-price";
     price.textContent = formatPrice(plan.price);
+
+    const selectedBadge = document.createElement("span");
+    selectedBadge.className = "selected-pill";
+    selectedBadge.setAttribute("aria-hidden", "true");
+    selectedBadge.innerHTML = '<i class="fa-solid fa-check"></i> Selected';
 
     const addButton = document.createElement("button");
     addButton.className = "add-subscription";
@@ -393,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addIcon.setAttribute("aria-hidden", "true");
     addButton.appendChild(addIcon);
 
-    row.append(label, dollarIcon, price, addButton);
+    row.append(label, dollarIcon, price, selectedBadge, addButton);
     return row;
   }
 
@@ -413,6 +467,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       toggleAddIcon(buttonElement, true);
       highlightSubscription(planId, true);
+      applyPlanFilter();
     } else {
       showToast(`${getShortPlanName(subscription.plan)} is already selected`, "error");
     }
@@ -433,6 +488,19 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleAddIcon(dropdownButton, false);
     }
     highlightSubscription(planId, false);
+    applyPlanFilter();
+  }
+
+  function clearSubscriptions() {
+    if (getStoredSubscriptions().length === 0) {
+      return;
+    }
+
+    saveSubscriptions([]);
+    displaySubscriptions([]);
+    syncDropdownIcons([]);
+    applyPlanFilter();
+    showToast("Cleared selected subscriptions");
   }
 
   function loadSubscriptions() {
@@ -440,6 +508,9 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSubscriptions(subscriptions);
     displaySubscriptions(subscriptions);
     syncDropdownIcons(subscriptions);
+    loadBudgetControls();
+    updateFilterButtons();
+    applyPlanFilter();
   }
 
   function getStoredSubscriptions() {
@@ -557,6 +628,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function updateFilterButtons() {
+    document.querySelectorAll(".filter-button").forEach((button) => {
+      button.classList.toggle("active", button.getAttribute("data-filter") === activeFilter);
+    });
+  }
+
+  function applyPlanFilter() {
+    const planRows = document.querySelectorAll(".list-group-item[data-plan-id]");
+
+    planRows.forEach((row) => {
+      const duration = row.getAttribute("data-duration");
+      const isSelected = row.classList.contains("selected-subscription");
+      const shouldShow =
+        activeFilter === "all" ||
+        (activeFilter === "selected" && isSelected) ||
+        (activeFilter === "monthly" && duration === "Monthly") ||
+        (activeFilter === "annual" && duration === "Yearly");
+
+      row.classList.toggle("plan-hidden", !shouldShow);
+    });
+  }
+
   function toggleAddIcon(buttonElement, isAdded) {
     const icon = buttonElement.querySelector("i");
     const plan = buttonElement.getAttribute("data-plan");
@@ -583,10 +676,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function displaySubscriptions(subscriptions) {
     const subscriptionList = document.getElementById("subscriptionList");
+    const subscriptionOverview = document.getElementById("subscriptionOverview");
     const emptyState = document.getElementById("emptyState");
     const breakdownContainer = document.getElementById("priceBreakdown");
 
     subscriptionList.textContent = "";
+    subscriptionOverview.textContent = "";
+    updateStickySummary(subscriptions);
+    updateDecisionTools(subscriptions);
 
     if (subscriptions.length === 0) {
       emptyState.style.display = "block";
@@ -598,44 +695,372 @@ document.addEventListener("DOMContentLoaded", () => {
     emptyState.style.display = "none";
     subscriptionList.style.display = "block";
 
-    let totalPrice = 0;
-    const priceBreakdown = document.createElement("div");
-    priceBreakdown.classList.add("price-breakdown", "p-3", "text-center");
-
-    const heading = document.createElement("h6");
-    const headingText = document.createElement("strong");
-    headingText.textContent = "Selected Subscriptions";
-    heading.appendChild(headingText);
-
-    const totalSubscriptions = document.createElement("p");
-    totalSubscriptions.append("Total Subscriptions: ", createStrong(String(subscriptions.length)));
-
-    const totalCost = document.createElement("p");
-
-    const summaryList = document.createElement("ul");
-    summaryList.classList.add("list-group", "summary-list");
-
-    subscriptions.forEach((subscription) => {
-      totalPrice += Number.parseFloat(subscription.price) || 0;
-      summaryList.appendChild(createSummaryItem(subscription));
+    subscriptionOverview.appendChild(createSubscriptionOverview(subscriptions));
+    groupSubscriptionsByProvider(subscriptions).forEach((group) => {
+      subscriptionList.appendChild(createSubscriptionGroup(group));
     });
-
-    totalCost.append("Total Cost: ", createStrong(`$${totalPrice.toFixed(2)}`));
-
-    priceBreakdown.append(heading, totalSubscriptions, totalCost, summaryList);
-    subscriptionList.appendChild(priceBreakdown);
 
     displayPriceComparison(subscriptions);
   }
 
+  function updateStickySummary(subscriptions) {
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const selectedCount = document.getElementById("stickySelectedCount");
+    const dueToday = document.getElementById("stickyDueToday");
+    const monthlyAverage = document.getElementById("stickyMonthlyAverage");
+    const twelveMonth = document.getElementById("stickyTwelveMonth");
+    const resetButton = document.getElementById("resetSubscriptions");
+
+    selectedCount.textContent = String(subscriptions.length);
+    dueToday.textContent = summary.dueTodayFormatted;
+    monthlyAverage.textContent = summary.monthlyAverageFormatted;
+    twelveMonth.textContent = summary.twelveMonthProjectionFormatted;
+    resetButton.disabled = subscriptions.length === 0;
+  }
+
+  function updateDecisionTools(subscriptions) {
+    updateBudgetControls(subscriptions);
+    renderInsights(subscriptions);
+    renderBetterResult(subscriptions, false);
+
+    const betterButton = document.getElementById("betterButton");
+    betterButton.disabled = subscriptions.length === 0;
+  }
+
+  function loadBudgetControls() {
+    const budget = getStoredBudget();
+    const budgetAmount = document.getElementById("budgetAmount");
+    budgetAmount.value = budget.amount;
+    updateBudgetControls(getStoredSubscriptions());
+  }
+
+  function getStoredBudget() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(budgetKey));
+      if (parsed && ["monthly", "yearly"].includes(parsed.type)) {
+        return {
+          type: parsed.type,
+          amount: parsed.amount || "",
+        };
+      }
+    } catch {
+      return { type: "monthly", amount: "" };
+    }
+
+    return { type: "monthly", amount: "" };
+  }
+
+  function saveBudget(budget) {
+    localStorage.setItem(budgetKey, JSON.stringify(budget));
+  }
+
+  function updateBudgetControls(subscriptions) {
+    const budget = getStoredBudget();
+    const budgetTypeButtons = document.querySelectorAll(".budget-type");
+    const budgetStatus = document.getElementById("budgetStatus");
+    const amount = Number.parseFloat(budget.amount);
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const projectedSpend = budget.type === "monthly" ? summary.monthlyAverage : summary.twelveMonthProjection;
+
+    budgetTypeButtons.forEach((button) => {
+      button.classList.toggle("active", button.getAttribute("data-budget-type") === budget.type);
+    });
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      budgetStatus.className = "budget-status neutral";
+      budgetStatus.textContent = "Set a budget to track your plan stack.";
+      return;
+    }
+
+    const difference = amount - projectedSpend;
+    const label = budget.type === "monthly" ? "monthly average" : "12-month projection";
+
+    if (difference < 0) {
+      budgetStatus.className = "budget-status over";
+      budgetStatus.textContent = `Over budget by ${formatCurrency(Math.abs(difference))} against your ${label}.`;
+      return;
+    }
+
+    if (difference <= amount * 0.1) {
+      budgetStatus.className = "budget-status close";
+      budgetStatus.textContent = `Close to budget: ${formatCurrency(difference)} left against your ${label}.`;
+      return;
+    }
+
+    budgetStatus.className = "budget-status under";
+    budgetStatus.textContent = `Under budget by ${formatCurrency(difference)} against your ${label}.`;
+  }
+
+  function renderInsights(subscriptions) {
+    const insightsPanel = document.getElementById("insightsPanel");
+    insightsPanel.textContent = "";
+
+    if (!subscriptions.length) {
+      insightsPanel.appendChild(createInsightCard("No selections yet", "Pick a few plans to unlock smart comparisons.", "neutral"));
+      return;
+    }
+
+    const rankedByTwelveMonth = subscriptions
+      .map((subscription) => ({
+        subscription,
+        value: getComparableCost(subscription, "twelveMonth"),
+      }))
+      .filter((item) => Number.isFinite(item.value))
+      .sort((a, b) => a.value - b.value);
+
+    const rankedByMonthly = subscriptions
+      .map((subscription) => ({
+        subscription,
+        value: getComparableCost(subscription, "monthly"),
+      }))
+      .filter((item) => Number.isFinite(item.value))
+      .sort((a, b) => b.value - a.value);
+
+    if (rankedByTwelveMonth[0]) {
+      insightsPanel.appendChild(
+        createInsightCard(
+          "Cheapest 12-month plan",
+          `${getSubscriptionSummaryName(rankedByTwelveMonth[0].subscription)} projects to ${formatCurrency(rankedByTwelveMonth[0].value)}.`,
+          "good"
+        )
+      );
+    }
+
+    const mostExpensive = rankedByTwelveMonth[rankedByTwelveMonth.length - 1];
+    if (mostExpensive) {
+      insightsPanel.appendChild(
+        createInsightCard(
+          "Highest 12-month plan",
+          `${getSubscriptionSummaryName(mostExpensive.subscription)} projects to ${formatCurrency(mostExpensive.value)}.`,
+          "watch"
+        )
+      );
+    }
+
+    if (rankedByMonthly[0]) {
+      insightsPanel.appendChild(
+        createInsightCard(
+          "Largest monthly charge",
+          `${getSubscriptionSummaryName(rankedByMonthly[0].subscription)} is ${formatCurrency(rankedByMonthly[0].value)} per month.`,
+          "neutral"
+        )
+      );
+    }
+
+    const bestSavings = findBestSavingsOpportunity(subscriptions);
+    insightsPanel.appendChild(
+      bestSavings
+        ? createInsightCard("Savings found", `${bestSavings.message} You could save ${formatCurrency(bestSavings.savings)}.`, "good")
+        : createInsightCard("Billing choices", "Your selected tiers are already using their lowest 12-month billing option.", "neutral")
+    );
+  }
+
+  function createInsightCard(title, body, tone) {
+    const card = document.createElement("article");
+    card.className = `insight-card insight-${tone}`;
+
+    const heading = document.createElement("strong");
+    heading.textContent = title;
+
+    const text = document.createElement("p");
+    text.textContent = body;
+
+    card.append(heading, text);
+    return card;
+  }
+
+  function showBetterRecommendation(subscriptions) {
+    renderBetterResult(subscriptions, true);
+  }
+
+  function renderBetterResult(subscriptions, shouldReveal) {
+    const betterResult = document.getElementById("betterResult");
+    const recommendation = findBestSavingsOpportunity(subscriptions);
+
+    if (!subscriptions.length) {
+      betterResult.className = "better-result muted-result";
+      betterResult.textContent = "Select plans to see savings opportunities.";
+      return;
+    }
+
+    if (!shouldReveal) {
+      betterResult.className = recommendation ? "better-result muted-result" : "better-result success-result";
+      betterResult.textContent = recommendation
+        ? "A savings check is ready."
+        : "Your selected tiers already use their lowest 12-month billing option.";
+      return;
+    }
+
+    if (!recommendation) {
+      betterResult.className = "better-result success-result";
+      betterResult.textContent = "Nice stack. No cheaper same-tier billing option is available for your current selections.";
+      return;
+    }
+
+    betterResult.className = "better-result action-result";
+    betterResult.textContent = `${recommendation.message} Estimated 12-month savings: ${formatCurrency(recommendation.savings)}.`;
+  }
+
+  function findBestSavingsOpportunity(subscriptions) {
+    return subscriptions.reduce((best, subscription) => {
+      const opportunity = findSavingsOpportunity(subscription);
+      if (!opportunity) {
+        return best;
+      }
+
+      if (!best || opportunity.savings > best.savings) {
+        return opportunity;
+      }
+
+      return best;
+    }, null);
+  }
+
+  function findSavingsOpportunity(subscription) {
+    const selectedRecord = planById.get(subscription.id);
+    const selectedTwelveMonth = getComparableCost(subscription, "twelveMonth");
+
+    if (!selectedRecord || !Number.isFinite(selectedTwelveMonth)) {
+      return null;
+    }
+
+    const bestAlternative = selectedRecord.tier.plans.reduce((best, plan) => {
+      const candidateSubscription = {
+        price: formatPrice(plan.price),
+        duration: plan.duration,
+      };
+      const candidateValue = getComparableCost(candidateSubscription, "twelveMonth");
+
+      if (!Number.isFinite(candidateValue) || plan.id === subscription.id) {
+        return best;
+      }
+
+      if (!best || candidateValue < best.value) {
+        return {
+          plan,
+          value: candidateValue,
+        };
+      }
+
+      return best;
+    }, null);
+
+    if (!bestAlternative || bestAlternative.value >= selectedTwelveMonth) {
+      return null;
+    }
+
+    const savings = selectedTwelveMonth - bestAlternative.value;
+    if (savings <= 0.009) {
+      return null;
+    }
+
+    return {
+      currentPlanId: subscription.id,
+      recommendedPlanId: bestAlternative.plan.id,
+      savings,
+      message: `Switch ${selectedRecord.tier.name} from ${selectedRecord.plan.label} to ${bestAlternative.plan.label}.`,
+    };
+  }
+
+  function createSubscriptionOverview(subscriptions) {
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const overview = document.createElement("div");
+    overview.className = "overview-card";
+
+    const heading = document.createElement("h6");
+    heading.textContent = "Selected Subscriptions";
+
+    const metrics = document.createElement("div");
+    metrics.className = "overview-metrics";
+    metrics.append(
+      createMetric("Count", String(subscriptions.length)),
+      createMetric("Due Today", summary.dueTodayFormatted),
+      createMetric("Monthly Average", summary.monthlyAverageFormatted),
+      createMetric("Projected 12-Month Cost", summary.twelveMonthProjectionFormatted)
+    );
+
+    overview.append(heading, metrics);
+    return overview;
+  }
+
+  function createMetric(label, value) {
+    const metric = document.createElement("div");
+    metric.className = "overview-metric";
+
+    const metricLabel = document.createElement("span");
+    metricLabel.textContent = label;
+
+    const metricValue = document.createElement("strong");
+    metricValue.textContent = value;
+
+    metric.append(metricLabel, metricValue);
+    return metric;
+  }
+
+  function groupSubscriptionsByProvider(subscriptions) {
+    const providerOrder = new Map(providers.map((provider, index) => [provider.id, index]));
+    const groups = new Map();
+
+    subscriptions.forEach((subscription) => {
+      const provider = providers.find((item) => item.id === subscription.providerId) || {
+        id: "legacy",
+        name: "Other Subscriptions",
+      };
+
+      if (!groups.has(provider.id)) {
+        groups.set(provider.id, {
+          provider,
+          subscriptions: [],
+        });
+      }
+
+      groups.get(provider.id).subscriptions.push(subscription);
+    });
+
+    return Array.from(groups.values()).sort((a, b) => {
+      const aOrder = providerOrder.has(a.provider.id) ? providerOrder.get(a.provider.id) : Number.MAX_SAFE_INTEGER;
+      const bOrder = providerOrder.has(b.provider.id) ? providerOrder.get(b.provider.id) : Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
+  }
+
+  function createSubscriptionGroup(group) {
+    const groupItem = document.createElement("li");
+    groupItem.className = `subscription-group subscription-group-${group.provider.id}`;
+
+    const groupSummary = summarizeSubscriptionCosts(group.subscriptions);
+    const header = document.createElement("div");
+    header.className = "subscription-group-header";
+
+    const title = document.createElement("h6");
+    title.textContent = group.provider.name;
+
+    const subtotal = document.createElement("span");
+    subtotal.textContent = `${groupSummary.twelveMonthProjectionFormatted} / 12 months`;
+
+    const plans = document.createElement("ul");
+    plans.className = "subscription-group-list";
+    group.subscriptions.forEach((subscription) => {
+      plans.appendChild(createSummaryItem(subscription));
+    });
+
+    header.append(title, subtotal);
+    groupItem.append(header, plans);
+    return groupItem;
+  }
+
   function createSummaryItem(subscription) {
     const item = document.createElement("li");
-    item.classList.add("list-group-item", "py-2", "px-3");
+    item.className = "subscription-item";
 
-    const details = document.createElement("span");
+    const details = document.createElement("div");
+    details.className = "subscription-details";
     const name = document.createElement("strong");
-    name.textContent = subscription.plan;
-    details.append(name, ` - $${subscription.price} (${subscription.duration})`);
+    name.textContent = getSubscriptionSummaryName(subscription);
+
+    const meta = document.createElement("span");
+    meta.textContent = `$${subscription.price} ${subscription.duration}`;
+    details.append(name, meta);
 
     const removeButton = document.createElement("button");
     removeButton.className = "remove-subscription";
@@ -653,6 +1078,15 @@ document.addEventListener("DOMContentLoaded", () => {
     return item;
   }
 
+  function getSubscriptionSummaryName(subscription) {
+    const record = planById.get(subscription.id);
+    if (!record) {
+      return subscription.plan;
+    }
+
+    return `${record.tier.name} - ${record.plan.label}`;
+  }
+
   function displayPriceComparison(subscriptionPlans) {
     const comparisonData = calculatePriceComparison(subscriptionPlans);
     const breakdownContainer = document.getElementById("priceBreakdown");
@@ -662,16 +1096,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    breakdownContainer.appendChild(createComparisonToolbar());
+
     const table = document.createElement("table");
-    table.className = "table table-bordered text-center";
+    table.className = `table table-bordered text-center comparison-${activeComparisonMode}`;
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Plan", "Monthly Cost", "3-Month Cost", "12-Month Cost"].forEach((label) => {
-      const th = document.createElement("th");
-      th.textContent = label;
-      headerRow.appendChild(th);
-    });
+    appendHeaderCell(headerRow, "Plan");
+    appendHeaderCell(headerRow, "Monthly Cost", "monthly");
+    appendHeaderCell(headerRow, "3-Month Cost", "threeMonth");
+    appendHeaderCell(headerRow, "12-Month Cost", "twelveMonth");
     thead.appendChild(headerRow);
 
     const lowestTwelveMonth = getBestTwelveMonthProjection(comparisonData);
@@ -679,15 +1114,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.createElement("tbody");
     comparisonData.forEach((data) => {
       const row = document.createElement("tr");
-      appendCell(row, data.name);
-      appendCell(row, data.monthlyCost, data.monthlyCost === "N/A" ? "na" : "");
-      appendCell(row, data.threeMonthCost, data.threeMonthCost === "N/A" ? "na" : "");
+      appendCell(row, data.name, "plan-cell");
+      appendCell(row, data.monthlyCost, getComparisonCellClass("monthly", data.monthlyCost));
+      appendCell(row, data.threeMonthCost, getComparisonCellClass("threeMonth", data.threeMonthCost));
 
       const twelveMonthClass = lowestTwelveMonth && data.twelveMonthValue === lowestTwelveMonth.twelveMonthValue
-        ? "best-value"
+        ? `${getComparisonCellClass("twelveMonth", data.twelveMonthCost)} best-value`
         : data.twelveMonthCost === "N/A"
-        ? "na"
-        : "";
+        ? getComparisonCellClass("twelveMonth", data.twelveMonthCost)
+        : getComparisonCellClass("twelveMonth", data.twelveMonthCost);
       appendCell(row, data.twelveMonthCost, twelveMonthClass);
       tbody.appendChild(row);
     });
@@ -705,6 +1140,50 @@ document.addEventListener("DOMContentLoaded", () => {
       savingsHighlight.appendChild(savingsText);
       breakdownContainer.appendChild(savingsHighlight);
     }
+  }
+
+  function createComparisonToolbar() {
+    const toolbar = document.createElement("div");
+    toolbar.className = "comparison-toolbar";
+
+    const label = document.createElement("span");
+    label.textContent = "Compare by";
+
+    const group = document.createElement("div");
+    group.className = "comparison-mode-group";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", "Comparison time period");
+
+    [
+      ["monthly", "Monthly"],
+      ["threeMonth", "3-Month"],
+      ["twelveMonth", "12-Month"],
+    ].forEach(([mode, text]) => {
+      const button = document.createElement("button");
+      button.className = "comparison-mode";
+      button.type = "button";
+      button.setAttribute("data-mode", mode);
+      button.classList.toggle("active", activeComparisonMode === mode);
+      button.textContent = text;
+      group.appendChild(button);
+    });
+
+    toolbar.append(label, group);
+    return toolbar;
+  }
+
+  function getComparisonCellClass(mode, value) {
+    const classes = ["currency-cell"];
+
+    if (value === "N/A") {
+      classes.push("na");
+    }
+
+    if (activeComparisonMode === mode) {
+      classes.push("active-period");
+    }
+
+    return classes.join(" ");
   }
 
   function showPlanDetails(tierId) {
@@ -813,6 +1292,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const strong = document.createElement("strong");
     strong.textContent = text;
     return strong;
+  }
+
+  function appendHeaderCell(row, text, mode = "") {
+    const cell = document.createElement("th");
+    cell.textContent = text;
+    if (mode && activeComparisonMode === mode) {
+      cell.className = "active-period";
+    }
+    row.appendChild(cell);
   }
 
   function appendCell(row, text, className = "") {

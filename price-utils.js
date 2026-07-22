@@ -65,11 +65,27 @@
       return {
         name: plan.plan,
         monthlyCost: formatProjectedCost(projectedCosts.monthly),
+        monthlyValue: projectedCosts.monthly,
         threeMonthCost: formatProjectedCost(projectedCosts.threeMonth),
+        threeMonthValue: projectedCosts.threeMonth,
         twelveMonthCost: formatProjectedCost(projectedCosts.twelveMonth),
         twelveMonthValue: projectedCosts.twelveMonth,
       };
     });
+  }
+
+  function getComparableCost(subscription, horizon) {
+    const projectedCosts = getProjectedCosts(subscription);
+
+    if (horizon === "monthly") {
+      return projectedCosts.monthly;
+    }
+
+    if (horizon === "threeMonth") {
+      return projectedCosts.threeMonth;
+    }
+
+    return projectedCosts.twelveMonth;
   }
 
   function getBestTwelveMonthProjection(comparisonData) {
@@ -88,13 +104,45 @@
     }, null);
   }
 
+  function summarizeSubscriptionCosts(subscriptionPlans) {
+    const totals = subscriptionPlans.reduce(
+      (summary, subscription) => {
+        const projectedCosts = getProjectedCosts(subscription);
+
+        summary.dueToday += parseCurrency(subscription.price);
+        if (Number.isFinite(projectedCosts.twelveMonth)) {
+          summary.twelveMonthProjection += projectedCosts.twelveMonth;
+        }
+
+        return summary;
+      },
+      {
+        dueToday: 0,
+        twelveMonthProjection: 0,
+      }
+    );
+
+    const monthlyAverage = totals.twelveMonthProjection / 12;
+
+    return {
+      dueToday: totals.dueToday,
+      dueTodayFormatted: formatCurrency(totals.dueToday),
+      monthlyAverage,
+      monthlyAverageFormatted: formatCurrency(monthlyAverage),
+      twelveMonthProjection: totals.twelveMonthProjection,
+      twelveMonthProjectionFormatted: formatCurrency(totals.twelveMonthProjection),
+    };
+  }
+
   return {
     calculatePriceComparison,
     formatCurrency,
     formatProjectedCost,
     getBestTwelveMonthProjection,
+    getComparableCost,
     getProjectedCosts,
     normalizeDuration,
     parseCurrency,
+    summarizeSubscriptionCosts,
   };
 });

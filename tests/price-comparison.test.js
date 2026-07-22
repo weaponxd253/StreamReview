@@ -3,9 +3,11 @@ const {
   calculatePriceComparison,
   formatCurrency,
   getBestTwelveMonthProjection,
+  getComparableCost,
   getProjectedCosts,
   normalizeDuration,
   parseCurrency,
+  summarizeSubscriptionCosts,
 } = require("../price-utils");
 
 function test(name, fn) {
@@ -70,25 +72,39 @@ test("formats comparison rows", () => {
     {
       name: "PlayStation Plus Essential - Monthly",
       monthlyCost: "$10.99",
+      monthlyValue: 10.99,
       threeMonthCost: "$32.97",
+      threeMonthValue: 32.97,
       twelveMonthCost: "$131.88",
       twelveMonthValue: 131.88,
     },
     {
       name: "PlayStation Plus Essential - 3 Months",
       monthlyCost: "N/A",
+      monthlyValue: null,
       threeMonthCost: "$27.99",
+      threeMonthValue: 27.99,
       twelveMonthCost: "$111.96",
       twelveMonthValue: 111.96,
     },
     {
       name: "PlayStation Plus Essential - Yearly",
       monthlyCost: "N/A",
+      monthlyValue: null,
       threeMonthCost: "N/A",
+      threeMonthValue: null,
       twelveMonthCost: "$79.99",
       twelveMonthValue: 79.99,
     },
   ]);
+});
+
+test("gets comparable cost for the selected horizon", () => {
+  const plan = { price: "7.99", duration: "3 Months" };
+
+  assert.equal(getComparableCost(plan, "monthly"), null);
+  assert.equal(getComparableCost(plan, "threeMonth"), 7.99);
+  assert.equal(getComparableCost(plan, "twelveMonth"), 31.96);
 });
 
 test("best value requires at least two valid 12-month projections", () => {
@@ -117,4 +133,16 @@ test("best value requires at least two valid 12-month projections", () => {
   ]);
 
   assert.equal(best.name, "Yearly Plan");
+});
+
+test("summarizes selected subscription totals", () => {
+  const summary = summarizeSubscriptionCosts([
+    { price: "3.99", duration: "Monthly" },
+    { price: "27.99", duration: "3 Months" },
+    { price: "49.99", duration: "Yearly" },
+  ]);
+
+  assert.equal(summary.dueTodayFormatted, "$81.97");
+  assert.equal(summary.monthlyAverageFormatted, "$17.49");
+  assert.equal(summary.twelveMonthProjectionFormatted, "$209.83");
 });

@@ -17,6 +17,29 @@
     </div>
   </header>
 
+  <section class="sticky-summary" aria-label="Selected subscription summary">
+    <div class="summary-metric">
+      <span class="summary-label">Selected</span>
+      <strong id="stickySelectedCount">0</strong>
+    </div>
+    <div class="summary-metric">
+      <span class="summary-label">Due Today</span>
+      <strong id="stickyDueToday">$0.00</strong>
+    </div>
+    <div class="summary-metric">
+      <span class="summary-label">Monthly Avg</span>
+      <strong id="stickyMonthlyAverage">$0.00</strong>
+    </div>
+    <div class="summary-metric">
+      <span class="summary-label">12-Month</span>
+      <strong id="stickyTwelveMonth">$0.00</strong>
+    </div>
+    <button class="reset-subscriptions" type="button" id="resetSubscriptions" disabled>
+      <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+      <span>Reset</span>
+    </button>
+  </section>
+
   <div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
     <div class="offcanvas-header">
       <h5 id="offcanvasTitle"></h5>
@@ -28,6 +51,15 @@
   </div>
 
   <section class="provider-section" aria-label="Subscription providers">
+    <div class="provider-toolbar" aria-label="Plan filters">
+      <span>Show</span>
+      <div class="filter-group" role="group" aria-label="Filter plans">
+        <button class="filter-button active" type="button" data-filter="all">All</button>
+        <button class="filter-button" type="button" data-filter="selected">Selected</button>
+        <button class="filter-button" type="button" data-filter="monthly">Monthly</button>
+        <button class="filter-button" type="button" data-filter="annual">Annual</button>
+      </div>
+    </div>
     <div id="providerGrid" class="row provider-grid g-4"></div>
   </section>
 
@@ -41,12 +73,42 @@
         <div class="subscriptions-container card">
           <h5 class="card-header">Your Current Subscriptions</h5>
           <div class="card-body">
+            <div id="subscriptionOverview" class="subscription-overview"></div>
             <ul id="subscriptionList" class="list-group">
               <!-- Dynamically populated list -->
             </ul>
-          </div>
-          <div id="emptyState" class="text-muted text-center py-3" style="display: none;">
-            No subscriptions added yet.
+            <div id="emptyState" class="empty-state" style="display: none;">
+              No subscriptions added yet.
+            </div>
+            <div class="decision-tools" id="decisionTools">
+              <section class="budget-panel" aria-label="Budget tracker">
+                <div class="panel-heading">
+                  <h6>Budget Tracker</h6>
+                  <div class="budget-toggle" role="group" aria-label="Budget type">
+                    <button class="budget-type active" type="button" data-budget-type="monthly">Monthly</button>
+                    <button class="budget-type" type="button" data-budget-type="yearly">Yearly</button>
+                  </div>
+                </div>
+                <label class="budget-input-label" for="budgetAmount">Budget amount</label>
+                <div class="budget-input-wrap">
+                  <span>$</span>
+                  <input id="budgetAmount" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
+                </div>
+                <p id="budgetStatus" class="budget-status neutral">Set a budget to track your plan stack.</p>
+              </section>
+
+              <section class="recommendation-panel" aria-label="Recommendations">
+                <div class="panel-heading">
+                  <h6>Smart Recommendations</h6>
+                  <button class="better-button" type="button" id="betterButton" disabled>
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <span>Can I do better?</span>
+                  </button>
+                </div>
+                <div id="betterResult" class="better-result muted-result">Select plans to see savings opportunities.</div>
+                <div id="insightsPanel" class="insights-grid"></div>
+              </section>
+            </div>
           </div>
         </div>
         <div id="priceBreakdown" class="price-breakdown-container mt-4">
