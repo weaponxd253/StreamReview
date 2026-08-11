@@ -1516,6 +1516,13 @@ document.addEventListener("DOMContentLoaded", () => {
       .filter((item) => Number.isFinite(item.value))
       .sort((a, b) => b.value - a.value);
 
+    const bestSavings = findBestSavingsOpportunity(subscriptions);
+    if (bestSavings) {
+      insightsPanel.appendChild(
+        createInsightCard("Savings found", `${bestSavings.message} You could save ${formatCurrency(bestSavings.savings)}.`, "primary")
+      );
+    }
+
     if (rankedByTwelveMonth[0]) {
       insightsPanel.appendChild(
         createInsightCard(
@@ -1547,12 +1554,11 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    const bestSavings = findBestSavingsOpportunity(subscriptions);
-    insightsPanel.appendChild(
-      bestSavings
-        ? createInsightCard("Savings found", `${bestSavings.message} You could save ${formatCurrency(bestSavings.savings)}.`, "good")
-        : createInsightCard("Billing choices", "Your selected tiers are already using their lowest 12-month billing option.", "neutral")
-    );
+    if (!bestSavings) {
+      insightsPanel.appendChild(
+        createInsightCard("Billing choices", "Your selected tiers are already using their lowest 12-month billing option.", "neutral")
+      );
+    }
   }
 
   function createInsightCard(title, body, tone) {
@@ -1898,7 +1904,7 @@ document.addEventListener("DOMContentLoaded", () => {
       savingsHighlight.className = "savings-highlight text-center mt-3";
       const savingsText = document.createElement("p");
       const strong = document.createElement("strong");
-      strong.textContent = `Lowest 12-month projection: ${lowestTwelveMonth.name} at ${lowestTwelveMonth.twelveMonthCost}`;
+      strong.textContent = `Best 12-month value: ${lowestTwelveMonth.name} at ${lowestTwelveMonth.twelveMonthCost}`;
       savingsText.appendChild(strong);
       savingsHighlight.appendChild(savingsText);
       breakdownContainer.appendChild(savingsHighlight);
