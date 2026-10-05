@@ -189,3 +189,43 @@ test("builds upcoming charge list inside a window", () => {
   );
   assert.equal(charges.reduce((sum, charge) => sum + charge.price, 0), 30);
 });
+
+test("parses currency with thousands separators", () => {
+  assert.equal(parseCurrency("$1,299.99"), 1299.99);
+  assert.equal(parseCurrency(" 49.99 "), 49.99);
+});
+
+test("month-end renewals do not drift after short months", () => {
+  const today = parseDateOnly("2026-05-15");
+
+  assert.equal(formatDateInput(getNextRenewalDate("2026-01-31", "Monthly", today)), "2026-05-31");
+  assert.equal(formatDateInput(getNextRenewalDate("2025-11-30", "3 Months", today)), "2026-05-30");
+
+  const charges = getUpcomingCharges(
+    [{ id: "monthly", plan: "Monthly Plan", price: "10.00", duration: "Monthly" }],
+    { monthly: "2026-01-31" },
+    parseDateOnly("2026-02-01"),
+    90
+  );
+
+  assert.deepEqual(
+    charges.map((charge) => charge.date),
+    ["2026-02-28", "2026-03-31", "2026-04-30"]
+  );
+});
+
+test("day counts are not skewed by daylight saving transitions", () => {
+  const originalTz = process.env.TZ;
+  process.env.TZ = "America/New_York";
+
+  try {
+    assert.equal(getDaysUntil("2026-11-05", parseDateOnly("2026-10-30")), 6);
+    assert.equal(getDaysUntil("2026-03-10", parseDateOnly("2026-03-05")), 5);
+  } finally {
+    if (originalTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = originalTz;
+    }
+  }
+});

@@ -12,7 +12,7 @@
   }
 
   function parseCurrency(value) {
-    return Number.parseFloat(String(value).replace("$", "")) || 0;
+    return Number.parseFloat(String(value).replace(/[$,\s]/g, "")) || 0;
   }
 
   function formatCurrency(value) {
@@ -193,14 +193,26 @@
       return null;
     }
 
-    let nextDate = renewalDate;
-    const normalizedToday = parseDateOnly(formatDateInput(today));
+    return getNextRenewalOccurrence(renewalDate, intervalMonths, today).date;
+  }
 
-    while (nextDate < normalizedToday) {
-      nextDate = addMonths(nextDate, intervalMonths);
+  // Each renewal is counted from the original date so a 31st renewal returns to
+  // the 31st after a short month instead of drifting to the 28th.
+  function getNextRenewalOccurrence(renewalDate, intervalMonths, todayValue) {
+    const normalizedToday = parseDateOnly(formatDateInput(todayValue));
+    let periods = 0;
+    let date = renewalDate;
+
+    while (date < normalizedToday) {
+      periods += 1;
+      date = addMonths(renewalDate, periods * intervalMonths);
     }
 
-    return nextDate;
+    return { date, periods };
+  }
+
+  function toUtcDay(date) {
+    return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   }
 
   function getDaysUntil(dateValue, todayValue = new Date()) {
@@ -211,9 +223,8 @@
       return null;
     }
 
-    const normalizedDate = parseDateOnly(formatDateInput(date));
-    const normalizedToday = parseDateOnly(formatDateInput(today));
-    return Math.ceil((normalizedDate - normalizedToday) / 86400000);
+    // Compare calendar days in UTC so DST transitions (23h/25h days) don't skew the count.
+    return Math.round((toUtcDay(date) - toUtcDay(today)) / 86400000);
   }
 
   function getUpcomingCharges(subscriptionPlans, renewalDates = {}, todayValue = new Date(), daysAhead = 90) {
@@ -228,10 +239,16 @@
     return subscriptionPlans
       .flatMap((subscription) => {
         const intervalMonths = getBillingIntervalMonths(subscription.duration);
+        const renewalDate = parseDateOnly(renewalDates[subscription.id]);
         const charges = [];
-        let nextDate = getNextRenewalDate(renewalDates[subscription.id], subscription.duration, today);
 
-        while (intervalMonths && nextDate && nextDate <= windowEnd) {
+        if (!intervalMonths || !renewalDate) {
+          return charges;
+        }
+
+        let { date: nextDate, periods } = getNextRenewalOccurrence(renewalDate, intervalMonths, today);
+
+        while (nextDate <= windowEnd) {
           charges.push({
             id: subscription.id,
             plan: subscription.plan,
@@ -240,7 +257,8 @@
             date: formatDateInput(nextDate),
             daysUntil: getDaysUntil(nextDate, today),
           });
-          nextDate = addMonths(nextDate, intervalMonths);
+          periods += 1;
+          nextDate = addMonths(renewalDate, periods * intervalMonths);
         }
 
         return charges;
