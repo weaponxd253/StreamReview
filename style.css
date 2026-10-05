@@ -520,13 +520,22 @@ body {
   background-color: transparent;
 }
 
-.empty-state {
+.empty-state,
+.provider-empty {
   padding: 24px;
   border: 1px dashed var(--border);
   border-radius: 8px;
   color: var(--muted);
   background: var(--surface-muted);
   text-align: center;
+}
+
+.provider-empty {
+  margin: 16px 0 0;
+}
+
+.provider-empty[hidden] {
+  display: none;
 }
 
 .subscription-overview {

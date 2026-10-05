@@ -266,19 +266,62 @@
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
+  function getChargeTotals(charges) {
+    return charges.reduce(
+      (totals, charge) => {
+        if (charge.daysUntil <= 30) {
+          totals.nextThirty += charge.price;
+        }
+        totals.nextNinety += charge.price;
+        return totals;
+      },
+      { nextThirty: 0, nextNinety: 0 }
+    );
+  }
+
+  function getValueRating(monthlyAverage, hoursValue) {
+    const hours = Number.parseFloat(hoursValue);
+    if (!Number.isFinite(hours) || hours <= 0 || !(monthlyAverage > 0)) {
+      return null;
+    }
+
+    const hourlyCost = monthlyAverage / hours;
+    if (hourlyCost <= 2) {
+      return { hourlyCost, level: "Great" };
+    }
+
+    if (hourlyCost <= 5) {
+      return { hourlyCost, level: "Good" };
+    }
+
+    return { hourlyCost, level: "Watch" };
+  }
+
+  // Quotes every cell and neutralizes values a spreadsheet would run as a formula.
+  function escapeCsvCell(value) {
+    let text = String(value ?? "");
+    if (/^[=+\-@\t\r]/.test(text)) {
+      text = `'${text}`;
+    }
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
   return {
     addMonths,
     calculatePriceComparison,
+    escapeCsvCell,
     formatCurrency,
     formatDateInput,
     formatProjectedCost,
     getBestTwelveMonthProjection,
     getBillingIntervalMonths,
+    getChargeTotals,
     getComparableCost,
     getDaysUntil,
     getNextRenewalDate,
     getProjectedCosts,
     getUpcomingCharges,
+    getValueRating,
     normalizeDuration,
     parseDateOnly,
     parseCurrency,

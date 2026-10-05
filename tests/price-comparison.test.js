@@ -2,15 +2,18 @@ const assert = require("node:assert/strict");
 const {
   addMonths,
   calculatePriceComparison,
+  escapeCsvCell,
   formatDateInput,
   formatCurrency,
   getBestTwelveMonthProjection,
   getBillingIntervalMonths,
+  getChargeTotals,
   getComparableCost,
   getDaysUntil,
   getNextRenewalDate,
   getProjectedCosts,
   getUpcomingCharges,
+  getValueRating,
   normalizeDuration,
   parseDateOnly,
   parseCurrency,
@@ -228,4 +231,30 @@ test("day counts are not skewed by daylight saving transitions", () => {
       process.env.TZ = originalTz;
     }
   }
+});
+
+test("totals charges for the 30- and 90-day windows", () => {
+  const totals = getChargeTotals([
+    { price: 10, daysUntil: 0 },
+    { price: 5, daysUntil: 30 },
+    { price: 20, daysUntil: 31 },
+  ]);
+
+  assert.deepEqual(totals, { nextThirty: 15, nextNinety: 35 });
+});
+
+test("rates value per gaming hour", () => {
+  assert.equal(getValueRating(20, ""), null);
+  assert.equal(getValueRating(0, "10"), null);
+  assert.equal(getValueRating(20, "10").level, "Great");
+  assert.equal(getValueRating(40, "10").level, "Good");
+  assert.equal(getValueRating(60, "10").level, "Watch");
+});
+
+test("escapes CSV cells and neutralizes formulas", () => {
+  assert.equal(escapeCsvCell('Say "hi"'), '"Say ""hi"""');
+  assert.equal(escapeCsvCell("=HYPERLINK(\"x\")"), '"\'=HYPERLINK(""x"")"');
+  assert.equal(escapeCsvCell("@SUM(A1)"), '"\'@SUM(A1)"');
+  assert.equal(escapeCsvCell("12.99"), '"12.99"');
+  assert.equal(escapeCsvCell(null), '""');
 });
