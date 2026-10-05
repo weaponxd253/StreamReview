@@ -803,65 +803,6 @@ body {
 }
 
 .budget-status,
-.better-result {
-  margin: 12px 0 0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.budget-status.neutral,
-.muted-result {
-  border: 1px solid rgba(217, 222, 231, 0.86);
-  color: var(--muted);
-  background: #ffffff;
-}
-
-.budget-status.under,
-.success-result {
-  border: 1px solid #86efac;
-  color: #047857;
-  background: #ecfdf3;
-}
-
-.budget-status.close {
-  border: 1px solid #fde68a;
-  color: #92400e;
-  background: #fffbeb;
-}
-
-.budget-status.over,
-.action-result {
-  border: 1px solid #fca5a5;
-  color: #991b1b;
-  background: #fef2f2;
-}
-
-.better-button {
-  min-height: 36px;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
-  padding: 7px 10px;
-  color: #1d4ed8;
-  background: #eff6ff;
-  font-size: 0.84rem;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-}
-
-.better-button:hover:not(:disabled) {
-  background: #dbeafe;
-}
-
-.better-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
 .insights-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -921,6 +862,15 @@ body {
   font-size: 0.76rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.panel-badge.is-empty {
+  border-color: transparent;
+  padding: 4px 0;
+  color: var(--muted);
+  background: none;
+  font-weight: 600;
+  font-style: italic;
 }
 
 .charge-metrics,
@@ -1487,7 +1437,6 @@ body {
 .filter-button:focus-visible,
 .comparison-mode:focus-visible,
 .budget-type:focus-visible,
-.better-button:focus-visible,
 .custom-add-button:focus-visible,
 .export-button:focus-visible,
 .import-backup:focus-within,
@@ -1680,5 +1629,65 @@ body {
     content: attr(data-label);
     color: var(--muted);
     font-weight: 700;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .app-shell {
+    max-width: none;
+    padding: 0;
+  }
+
+  /* Interactive parts of the planner don't belong in a printed report. */
+  .provider-section,
+  .reset-subscriptions,
+  .remove-subscription,
+  .switch-plan,
+  .budget-toggle,
+  .budget-input-label,
+  .budget-input-wrap,
+  .value-panel,
+  .comparison-toolbar,
+  .custom-section,
+  .scenario-section,
+  .export-section,
+  .view-plan-button,
+  .toast-container,
+  .offcanvas,
+  .return-alerts,
+  .insight-card:not(.insight-primary) {
+    display: none !important;
+  }
+
+  .sticky-summary {
+    position: static;
+  }
+
+  .renewal-date-input {
+    border: 0;
+    padding: 0;
+  }
+
+  .renewal-control:has(.renewal-status.is-empty) .renewal-date-input {
+    display: none;
+  }
+
+  .summary-section {
+    max-width: none;
+  }
+
+  .card,
+  .sticky-summary,
+  .table,
+  .comparison-table-wrap tr,
+  .overview-card,
+  .subscription-group,
+  .decision-tools > section {
+    box-shadow: none !important;
+    break-inside: avoid;
   }
 }
