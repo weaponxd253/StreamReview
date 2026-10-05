@@ -319,11 +319,6 @@ document.addEventListener("DOMContentLoaded", () => {
       renderReturnAlerts(subscriptions);
     }
 
-    const betterButton = e.target.closest(".better-button");
-    if (betterButton) {
-      showBetterRecommendation(getStoredSubscriptions());
-    }
-
     const switchButton = e.target.closest(".switch-plan");
     if (switchButton) {
       switchPlan(switchButton.getAttribute("data-from"), switchButton.getAttribute("data-to"));
@@ -488,7 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     provider.tiers.forEach((tier) => {
       const tierItem = document.createElement("li");
-      tierItem.className = `list-group-item ${provider.headerClass}`;
+      tierItem.className = `list-group-item tier-header ${provider.headerClass}`;
 
       const tierName = document.createElement("span");
       tierName.textContent = tier.name;
@@ -633,7 +628,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!subscriptions.some((s) => s.id === planId)) {
+    // One account holds one membership per provider, so picking another tier or
+    // billing option replaces the current one instead of stacking both.
+    const existing = subscriptions.find((s) => !s.custom && s.providerId === subscription.providerId);
+    if (existing && existing.id !== planId) {
+      const replaced = subscriptions.map((s) => (s.id === existing.id ? subscription : s));
+      removeRenewalDate(existing.id);
+      saveSubscriptions(replaced);
+      displaySubscriptions(replaced);
+      syncDropdownIcons(replaced);
+      applyPlanFilter();
+      showToast(`Changed ${planById.get(planId).provider.name} to ${getSubscriptionSummaryName(subscription)}`);
+      return;
+    }
+
+    if (!existing) {
       subscriptions.push(subscription);
       saveSubscriptions(subscriptions);
       showToast(`Added ${getShortPlanName(subscription.plan)}`);
@@ -929,11 +938,28 @@ document.addEventListener("DOMContentLoaded", () => {
       row.classList.toggle("plan-hidden", !shouldShow);
     });
 
+    const isNarrowing = Boolean(activeSearch) || activeFilter !== "all";
+
+    document.querySelectorAll(".tier-header").forEach((tierHeader) => {
+      const planList = tierHeader.nextElementSibling;
+      const hasVisiblePlans = planList && planList.querySelector(".list-group-item[data-plan-id]:not(.plan-hidden)");
+      tierHeader.classList.toggle("plan-hidden", !hasVisiblePlans);
+    });
+
     document.querySelectorAll(".provider-column").forEach((column) => {
       const visibleRows = column.querySelectorAll(".list-group-item[data-plan-id]:not(.plan-hidden)");
       const category = column.getAttribute("data-category") || "gaming";
       const shouldShowColumn = visibleRows.length > 0 && (activeCategory === "all" || category === activeCategory);
       column.classList.toggle("plan-hidden", !shouldShowColumn);
+
+      // Matches inside a closed provider would be invisible, so open it while searching or filtering.
+      if (shouldShowColumn && isNarrowing) {
+        const collapse = column.querySelector(".multi-collapse");
+        if (!collapse.classList.contains("show")) {
+          collapse.classList.add("show");
+          column.querySelector("[data-bs-toggle='collapse']").setAttribute("aria-expanded", "true");
+        }
+      }
     });
 
     const providerEmpty = document.getElementById("providerEmpty");
@@ -1020,12 +1046,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateDecisionTools(subscriptions) {
     updateBudgetControls(subscriptions);
     renderInsights(subscriptions);
-    renderBetterResult(subscriptions, false);
     renderUpcomingCharges(subscriptions);
     updateGamingValue(subscriptions);
-
-    const betterButton = document.getElementById("betterButton");
-    betterButton.disabled = subscriptions.length === 0;
   }
 
   function loadBudgetControls() {
@@ -1164,7 +1186,8 @@ document.addEventListener("DOMContentLoaded", () => {
     nextNinetyTotal.textContent = formatCurrency(totals.nextNinety);
 
     if (!charges.length) {
-      nextChargeBadge.textContent = subscriptions.length ? "Add dates" : "No dates";
+      nextChargeBadge.className = "panel-badge is-empty";
+      nextChargeBadge.textContent = "No dates yet";
       const emptyItem = document.createElement("li");
       emptyItem.className = "upcoming-empty";
       emptyItem.textContent = subscriptions.length
@@ -1174,6 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    nextChargeBadge.className = "panel-badge";
     nextChargeBadge.textContent = `Next: ${formatShortDate(charges[0].date)}`;
     charges.slice(0, 5).forEach((charge) => {
       const item = document.createElement("li");
@@ -1259,12 +1283,14 @@ document.addEventListener("DOMContentLoaded", () => {
     costPerWeek.textContent = formatCurrency(weeklyCost);
 
     if (!rating) {
-      valueRating.textContent = Number.parseFloat(hoursValue) > 0 ? "No plans" : "No hours";
+      valueRating.className = "panel-badge is-empty";
+      valueRating.textContent = Number.parseFloat(hoursValue) > 0 ? "No plans" : "No hours yet";
       costPerHour.textContent = "$0.00";
       return;
     }
 
     costPerHour.textContent = formatCurrency(rating.hourlyCost);
+    valueRating.className = "panel-badge";
     valueRating.textContent = ratingLabels[rating.level];
   }
 
@@ -1720,38 +1746,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return button;
   }
 
-  function showBetterRecommendation(subscriptions) {
-    renderBetterResult(subscriptions, true);
-  }
-
-  function renderBetterResult(subscriptions, shouldReveal) {
-    const betterResult = document.getElementById("betterResult");
-    const recommendation = findBestSavingsOpportunity(subscriptions);
-
-    if (!subscriptions.length) {
-      betterResult.className = "better-result muted-result";
-      betterResult.textContent = "Select plans to see savings opportunities.";
-      return;
-    }
-
-    if (!shouldReveal) {
-      betterResult.className = recommendation ? "better-result muted-result" : "better-result success-result";
-      betterResult.textContent = recommendation
-        ? "A savings check is ready."
-        : "Your selected tiers already use their lowest 12-month billing option.";
-      return;
-    }
-
-    if (!recommendation) {
-      betterResult.className = "better-result success-result";
-      betterResult.textContent = "Nice stack. No cheaper same-tier billing option is available for your current selections.";
-      return;
-    }
-
-    betterResult.className = "better-result action-result";
-    betterResult.textContent = `${recommendation.message} Estimated 12-month savings: ${formatCurrency(recommendation.savings)}.`;
-  }
-
   function findBestSavingsOpportunity(subscriptions) {
     return subscriptions.reduce((best, subscription) => {
       const opportunity = findSavingsOpportunity(subscription);
@@ -2145,8 +2139,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const isError = type === "error";
 
     // Show one message at a time so rapid actions don't stack toasts over the page.
+    // Detach instead of dispose: a toast still fading in has a pending Bootstrap
+    // callback that would hit a disposed (null) element.
     toastContainer.querySelectorAll(".toast").forEach((existingToast) => {
-      bootstrap.Toast.getInstance(existingToast)?.dispose();
       existingToast.remove();
     });
 
