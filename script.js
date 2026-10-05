@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     getUpcomingCharges,
   } = window.StreamReviewPriceUtils;
   const maxScenarios = 8;
+  const compactLayoutQuery = window.matchMedia("(max-width: 991.98px)");
   let storageWarningShown = false;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
@@ -240,10 +241,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const { planById, tierById, legacyPlanToId } = buildIndexes(providers);
 
   renderProviders();
+  openDefaultProviders();
+  setupViewPlanButton();
   loadSubscriptions();
 
+  // On narrow screens the providers stack, so keep only one open at a time.
+  document.addEventListener("show.bs.collapse", (e) => {
+    if (!compactLayoutQuery.matches || !e.target.classList.contains("multi-collapse")) {
+      return;
+    }
+
+    document.querySelectorAll(".multi-collapse.show").forEach((openCollapse) => {
+      if (openCollapse !== e.target) {
+        bootstrap.Collapse.getOrCreateInstance(openCollapse, { toggle: false }).hide();
+      }
+    });
+  });
+
   document.body.addEventListener("click", (e) => {
-    const subscriptionButton = e.target.closest(".add-subscription");
+    const planRow = e.target.closest(".list-group-item[data-plan-id]");
+    const subscriptionButton = planRow ? planRow.querySelector(".add-subscription") : null;
     if (subscriptionButton) {
       const planId = subscriptionButton.getAttribute("data-plan-id");
       if (!planId || !planById.has(planId)) {
@@ -305,6 +322,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const betterButton = e.target.closest(".better-button");
     if (betterButton) {
       showBetterRecommendation(getStoredSubscriptions());
+    }
+
+    const switchButton = e.target.closest(".switch-plan");
+    if (switchButton) {
+      switchPlan(switchButton.getAttribute("data-from"), switchButton.getAttribute("data-to"));
     }
 
     const saveScenarioButton = e.target.closest(".scenario-save-button");
@@ -544,6 +566,62 @@ document.addEventListener("DOMContentLoaded", () => {
 
     row.append(label, dollarIcon, price, selectedBadge, addButton);
     return row;
+  }
+
+  // Start with plans visible: every provider on wide screens, the first one when stacked.
+  function openDefaultProviders() {
+    const providersToOpen = compactLayoutQuery.matches ? providers.slice(0, 1) : providers;
+
+    providersToOpen.forEach((provider) => {
+      document.getElementById(provider.collapseId).classList.add("show");
+      document.getElementById(provider.buttonId).setAttribute("aria-expanded", "true");
+    });
+  }
+
+  function setupViewPlanButton() {
+    const viewPlanButton = document.getElementById("viewPlanButton");
+    const subscriptionsCard = document.getElementById("yourSubscriptions");
+
+    viewPlanButton.addEventListener("click", () => {
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      subscriptionsCard.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    });
+
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(([entry]) => {
+        viewPlanButton.classList.toggle("is-offscreen-target", !entry.isIntersecting);
+      }).observe(subscriptionsCard);
+    } else {
+      viewPlanButton.classList.add("is-offscreen-target");
+    }
+  }
+
+  function updateViewPlanButton(count) {
+    const viewPlanButton = document.getElementById("viewPlanButton");
+    viewPlanButton.hidden = count === 0;
+    document.getElementById("viewPlanCount").textContent = String(count);
+  }
+
+  function switchPlan(fromPlanId, toPlanId) {
+    const replacement = createSubscription(toPlanId);
+    const subscriptions = getStoredSubscriptions();
+    if (!replacement || !subscriptions.some((subscription) => subscription.id === fromPlanId)) {
+      showToast("That plan could not be switched", "error");
+      return;
+    }
+
+    const alreadySelected = subscriptions.some((subscription) => subscription.id === toPlanId);
+    const nextSubscriptions = alreadySelected
+      ? subscriptions.filter((subscription) => subscription.id !== fromPlanId)
+      : subscriptions.map((subscription) => (subscription.id === fromPlanId ? replacement : subscription));
+
+    // The old renewal date belongs to a different billing cycle, so it no longer applies.
+    removeRenewalDate(fromPlanId);
+    saveSubscriptions(nextSubscriptions);
+    displaySubscriptions(nextSubscriptions);
+    syncDropdownIcons(nextSubscriptions);
+    applyPlanFilter();
+    showToast(`Switched to ${getShortPlanName(replacement.plan)} - ${planById.get(toPlanId).plan.label}`);
   }
 
   function addSubscription(planId, buttonElement) {
@@ -902,6 +980,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateDecisionTools(subscriptions);
     renderReturnAlerts(subscriptions);
 
+    document.getElementById("decisionTools").hidden = subscriptions.length === 0;
+    document.getElementById("startHint").hidden = subscriptions.length > 0;
+
     if (subscriptions.length === 0) {
       emptyState.style.display = "block";
       subscriptionList.style.display = "none";
@@ -933,6 +1014,7 @@ document.addEventListener("DOMContentLoaded", () => {
     monthlyAverage.textContent = summary.monthlyAverageFormatted;
     twelveMonth.textContent = summary.twelveMonthProjectionFormatted;
     resetButton.disabled = subscriptions.length === 0;
+    updateViewPlanButton(subscriptions.length);
   }
 
   function updateDecisionTools(subscriptions) {
@@ -1045,7 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const subscription = subscriptions.find((item) => item.id === planId);
     const status = input.closest(".renewal-control")?.querySelector(".renewal-status");
     if (subscription && status) {
-      status.textContent = getRenewalStatus(subscription, input.value);
+      applyRenewalStatus(status, subscription, input.value);
     }
 
     // Refresh dependent panels without re-rendering the list, which would replace the focused input.
@@ -1563,7 +1645,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const bestSavings = findBestSavingsOpportunity(subscriptions);
     if (bestSavings) {
       insightsPanel.appendChild(
-        createInsightCard("Savings found", `${bestSavings.message} You could save ${formatCurrency(bestSavings.savings)}.`, "primary")
+        createInsightCard(
+          "Savings found",
+          `${bestSavings.message} You could save ${formatCurrency(bestSavings.savings)}.`,
+          "primary",
+          createSwitchButton(bestSavings)
+        )
       );
     }
 
@@ -1605,7 +1692,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function createInsightCard(title, body, tone) {
+  function createInsightCard(title, body, tone, action = null) {
     const card = document.createElement("article");
     card.className = `insight-card insight-${tone}`;
 
@@ -1616,7 +1703,21 @@ document.addEventListener("DOMContentLoaded", () => {
     text.textContent = body;
 
     card.append(heading, text);
+    if (action) {
+      card.appendChild(action);
+    }
     return card;
+  }
+
+  function createSwitchButton(opportunity) {
+    const button = document.createElement("button");
+    button.className = "switch-plan";
+    button.type = "button";
+    button.setAttribute("data-from", opportunity.currentPlanId);
+    button.setAttribute("data-to", opportunity.recommendedPlanId);
+    button.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>';
+    button.append(` Switch to ${planById.get(opportunity.recommendedPlanId).plan.label}`);
+    return button;
   }
 
   function showBetterRecommendation(subscriptions) {
@@ -1847,11 +1948,16 @@ document.addEventListener("DOMContentLoaded", () => {
     input.value = renewalDates[subscription.id] || "";
 
     const status = document.createElement("span");
-    status.className = "renewal-status";
-    status.textContent = getRenewalStatus(subscription, input.value);
+    applyRenewalStatus(status, subscription, input.value);
 
     renewalWrap.append(label, input, status);
     return renewalWrap;
+  }
+
+  function applyRenewalStatus(statusElement, subscription, renewalDate) {
+    const status = getRenewalStatus(subscription, renewalDate);
+    statusElement.className = status ? "renewal-status" : "renewal-status is-empty";
+    statusElement.textContent = status || "Not set";
   }
 
   function getRenewalStatus(subscription, renewalDate) {
@@ -1859,7 +1965,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const daysUntil = getDaysUntil(nextRenewal);
 
     if (!nextRenewal || !Number.isFinite(daysUntil)) {
-      return "Add date";
+      return "";
     }
 
     const text = formatDaysUntil(daysUntil);
@@ -1921,19 +2027,22 @@ document.addEventListener("DOMContentLoaded", () => {
     comparisonData.forEach((data) => {
       const row = document.createElement("tr");
       appendCell(row, data.name, "plan-cell");
-      appendCell(row, data.monthlyCost, getComparisonCellClass("monthly", data.monthlyCost));
-      appendCell(row, data.threeMonthCost, getComparisonCellClass("threeMonth", data.threeMonthCost));
+      appendCell(row, data.monthlyCost, getComparisonCellClass("monthly", data.monthlyCost), "Monthly");
+      appendCell(row, data.threeMonthCost, getComparisonCellClass("threeMonth", data.threeMonthCost), "3-Month");
 
       const twelveMonthBaseClass = getComparisonCellClass("twelveMonth", data.twelveMonthCost);
       const twelveMonthClass = lowestTwelveMonth && data.twelveMonthValue === lowestTwelveMonth.twelveMonthValue
         ? `${twelveMonthBaseClass} best-value`
         : twelveMonthBaseClass;
-      appendCell(row, data.twelveMonthCost, twelveMonthClass);
+      appendCell(row, data.twelveMonthCost, twelveMonthClass, "12-Month");
       tbody.appendChild(row);
     });
 
     table.append(thead, tbody);
-    breakdownContainer.appendChild(table);
+    const tableWrap = document.createElement("div");
+    tableWrap.className = "comparison-table-wrap";
+    tableWrap.appendChild(table);
+    breakdownContainer.appendChild(tableWrap);
 
     if (lowestTwelveMonth) {
       const savingsHighlight = document.createElement("div");
@@ -2033,11 +2142,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function showToast(message, type = "success") {
     const toastContainer = document.getElementById("toastContainer");
     const toastId = `toast-${Date.now()}`;
+    const isError = type === "error";
+
+    // Show one message at a time so rapid actions don't stack toasts over the page.
+    toastContainer.querySelectorAll(".toast").forEach((existingToast) => {
+      bootstrap.Toast.getInstance(existingToast)?.dispose();
+      existingToast.remove();
+    });
+
     const toast = document.createElement("div");
-    toast.className = `toast align-items-center text-bg-${type === "error" ? "danger" : "success"} border-0`;
+    toast.className = `toast align-items-center text-bg-${isError ? "danger" : "success"} border-0`;
     toast.setAttribute("id", toastId);
-    toast.setAttribute("role", "alert");
-    toast.setAttribute("aria-live", "assertive");
+    toast.setAttribute("role", isError ? "alert" : "status");
+    toast.setAttribute("aria-live", isError ? "assertive" : "polite");
     toast.setAttribute("aria-atomic", "true");
 
     const body = document.createElement("div");
@@ -2057,7 +2174,7 @@ document.addEventListener("DOMContentLoaded", () => {
     toast.appendChild(body);
     toastContainer.appendChild(toast);
 
-    const bootstrapToast = new bootstrap.Toast(toast);
+    const bootstrapToast = new bootstrap.Toast(toast, { delay: isError ? 5000 : 2500 });
     bootstrapToast.show();
 
     toast.addEventListener("hidden.bs.toast", () => {
@@ -2132,11 +2249,14 @@ document.addEventListener("DOMContentLoaded", () => {
     row.appendChild(cell);
   }
 
-  function appendCell(row, text, className = "") {
+  function appendCell(row, text, className = "", label = "") {
     const cell = document.createElement("td");
     cell.textContent = text;
     if (className) {
       cell.className = className;
+    }
+    if (label) {
+      cell.setAttribute("data-label", label);
     }
     row.appendChild(cell);
   }

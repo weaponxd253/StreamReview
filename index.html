@@ -79,9 +79,18 @@
         </div>
       </div>
     </div>
+    <p id="startHint" class="start-hint">
+      <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+      Pick a platform, then select any plan to add it. Your totals update as you go.
+    </p>
     <div id="providerGrid" class="row provider-grid g-4"></div>
     <p id="providerEmpty" class="provider-empty" aria-live="polite" hidden></p>
   </section>
+
+  <button id="viewPlanButton" class="view-plan-button" type="button" hidden>
+    <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+    <span>View my plan (<span id="viewPlanCount">0</span>)</span>
+  </button>
 
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
     <!-- Toasts will be dynamically added here -->
@@ -90,7 +99,7 @@
   <section class="summary-section">
     <div class="row mt-4">
       <div class="col">
-        <div class="subscriptions-container card">
+        <div class="subscriptions-container card" id="yourSubscriptions">
           <h5 class="card-header">Your Current Subscriptions</h5>
           <div class="card-body">
             <div id="returnAlerts" class="return-alerts" aria-live="polite"></div>
