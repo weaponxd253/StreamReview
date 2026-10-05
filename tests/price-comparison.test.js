@@ -2,15 +2,18 @@ const assert = require("node:assert/strict");
 const {
   addMonths,
   calculatePriceComparison,
+  escapeCsvCell,
   formatDateInput,
   formatCurrency,
   getBestTwelveMonthProjection,
   getBillingIntervalMonths,
+  getChargeTotals,
   getComparableCost,
   getDaysUntil,
   getNextRenewalDate,
   getProjectedCosts,
   getUpcomingCharges,
+  getValueRating,
   normalizeDuration,
   parseDateOnly,
   parseCurrency,
@@ -188,4 +191,70 @@ test("builds upcoming charge list inside a window", () => {
     ["2026-07-30", "2026-08-30", "2026-09-30"]
   );
   assert.equal(charges.reduce((sum, charge) => sum + charge.price, 0), 30);
+});
+
+test("parses currency with thousands separators", () => {
+  assert.equal(parseCurrency("$1,299.99"), 1299.99);
+  assert.equal(parseCurrency(" 49.99 "), 49.99);
+});
+
+test("month-end renewals do not drift after short months", () => {
+  const today = parseDateOnly("2026-05-15");
+
+  assert.equal(formatDateInput(getNextRenewalDate("2026-01-31", "Monthly", today)), "2026-05-31");
+  assert.equal(formatDateInput(getNextRenewalDate("2025-11-30", "3 Months", today)), "2026-05-30");
+
+  const charges = getUpcomingCharges(
+    [{ id: "monthly", plan: "Monthly Plan", price: "10.00", duration: "Monthly" }],
+    { monthly: "2026-01-31" },
+    parseDateOnly("2026-02-01"),
+    90
+  );
+
+  assert.deepEqual(
+    charges.map((charge) => charge.date),
+    ["2026-02-28", "2026-03-31", "2026-04-30"]
+  );
+});
+
+test("day counts are not skewed by daylight saving transitions", () => {
+  const originalTz = process.env.TZ;
+  process.env.TZ = "America/New_York";
+
+  try {
+    assert.equal(getDaysUntil("2026-11-05", parseDateOnly("2026-10-30")), 6);
+    assert.equal(getDaysUntil("2026-03-10", parseDateOnly("2026-03-05")), 5);
+  } finally {
+    if (originalTz === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = originalTz;
+    }
+  }
+});
+
+test("totals charges for the 30- and 90-day windows", () => {
+  const totals = getChargeTotals([
+    { price: 10, daysUntil: 0 },
+    { price: 5, daysUntil: 30 },
+    { price: 20, daysUntil: 31 },
+  ]);
+
+  assert.deepEqual(totals, { nextThirty: 15, nextNinety: 35 });
+});
+
+test("rates value per gaming hour", () => {
+  assert.equal(getValueRating(20, ""), null);
+  assert.equal(getValueRating(0, "10"), null);
+  assert.equal(getValueRating(20, "10").level, "Great");
+  assert.equal(getValueRating(40, "10").level, "Good");
+  assert.equal(getValueRating(60, "10").level, "Watch");
+});
+
+test("escapes CSV cells and neutralizes formulas", () => {
+  assert.equal(escapeCsvCell('Say "hi"'), '"Say ""hi"""');
+  assert.equal(escapeCsvCell("=HYPERLINK(\"x\")"), '"\'=HYPERLINK(""x"")"');
+  assert.equal(escapeCsvCell("@SUM(A1)"), '"\'@SUM(A1)"');
+  assert.equal(escapeCsvCell("12.99"), '"12.99"');
+  assert.equal(escapeCsvCell(null), '""');
 });

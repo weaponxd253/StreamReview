@@ -7,17 +7,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const appBackupVersion = 1;
   const {
     calculatePriceComparison,
+    escapeCsvCell,
     formatCurrency,
     formatDateInput,
     getBestTwelveMonthProjection,
+    getChargeTotals,
     getComparableCost,
     getDaysUntil,
     getNextRenewalDate,
+    getValueRating,
     normalizeDuration,
-    parseCurrency,
+    parseDateOnly,
     summarizeSubscriptionCosts,
     getUpcomingCharges,
   } = window.StreamReviewPriceUtils;
+  const maxScenarios = 8;
+  let storageWarningShown = false;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
   let activeCategory = "all";
@@ -210,7 +215,6 @@ document.addEventListener("DOMContentLoaded", () => {
           detailItems: [
             ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
             ["Availability", "Offered as a 12-month membership."],
-            ["Bonus Month", "An eligible 12-month Expansion Pack purchase or redemption can receive an additional bonus month through July 28, 2026; separate activation required."],
           ],
           plans: [
             { id: "nintendo-expansion-yearly", label: "Yearly", price: 49.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly"] },
@@ -224,7 +228,6 @@ document.addEventListener("DOMContentLoaded", () => {
           detailItems: [
             ["Family Coverage", "Covers up to eight Nintendo Accounts."],
             ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
-            ["Bonus Month", "An eligible 12-month Expansion Pack purchase or redemption can receive an additional bonus month through July 28, 2026; separate activation required."],
           ],
           plans: [
             { id: "nintendo-expansion-family-yearly", label: "Yearly", price: 79.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly (Up to 8 accounts)"] },
@@ -272,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const resetButton = e.target.closest(".reset-subscriptions");
-    if (resetButton) {
+    if (resetButton && window.confirm("Clear all selected subscriptions and their renewal dates?")) {
       clearSubscriptions();
     }
 
@@ -294,7 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const budget = getStoredBudget();
       budget.type = budgetTypeButton.getAttribute("data-budget-type") || "monthly";
       saveBudget(budget);
-      updateBudgetControls(getStoredSubscriptions());
+      const subscriptions = getStoredSubscriptions();
+      updateBudgetControls(subscriptions);
+      renderReturnAlerts(subscriptions);
     }
 
     const betterButton = e.target.closest(".better-button");
@@ -350,13 +355,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const budget = getStoredBudget();
       budget.amount = e.target.value;
       saveBudget(budget);
-      updateBudgetControls(getStoredSubscriptions());
+      const subscriptions = getStoredSubscriptions();
+      updateBudgetControls(subscriptions);
+      renderReturnAlerts(subscriptions);
     }
 
     if (e.target.classList.contains("renewal-date-input")) {
-      const planId = e.target.getAttribute("data-plan-id");
-      saveRenewalDate(planId, e.target.value);
-      displaySubscriptions(getStoredSubscriptions());
+      updateRenewalDate(e.target);
     }
 
     if (e.target.id === "gamingHours") {
@@ -377,8 +382,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (e.target.id === "importBackup") {
-      importBackup(e.target.files[0]);
+      const file = e.target.files[0];
       e.target.value = "";
+      if (file && window.confirm("Importing a backup replaces your current plans, budget, renewal dates, and scenarios. Continue?")) {
+        importBackup(file);
+      }
     }
   });
 
@@ -643,6 +651,25 @@ document.addEventListener("DOMContentLoaded", () => {
     applyPlanFilter();
   }
 
+  function readStorage(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStorage(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      if (!storageWarningShown) {
+        storageWarningShown = true;
+        showToast("Changes can't be saved in this browser. Storage may be full or disabled.", "error");
+      }
+    }
+  }
+
   function getStoredSubscriptions() {
     const rawSubscriptions = readSubscriptions();
     return normalizeSubscriptions(rawSubscriptions);
@@ -650,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function readSubscriptions() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(subscriptionsKey));
+      const parsed = JSON.parse(readStorage(subscriptionsKey));
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -658,7 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveSubscriptions(subscriptions) {
-    localStorage.setItem(subscriptionsKey, JSON.stringify(subscriptions));
+    writeStorage(subscriptionsKey, JSON.stringify(subscriptions));
   }
 
   function normalizeSubscriptions(rawSubscriptions) {
@@ -714,7 +741,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     return {
-      id: subscription.id || `custom-${Date.now()}`,
+      id: subscription.id || getStableCustomId(name, price, duration, subscription.category),
       custom: true,
       name,
       plan: name,
@@ -725,6 +752,17 @@ document.addEventListener("DOMContentLoaded", () => {
       category: subscription.category || "custom",
       notes: subscription.notes || "",
     };
+  }
+
+  // Imported custom plans without an id need one that stays the same on every read,
+  // or their renewal dates and remove button stop matching them.
+  function getStableCustomId(name, price, duration, category) {
+    const source = [name, formatPrice(price), duration, category || "custom"].join("|");
+    let hash = 0;
+    for (let index = 0; index < source.length; index += 1) {
+      hash = (hash * 31 + source.charCodeAt(index)) | 0;
+    }
+    return `custom-${(hash >>> 0).toString(36)}`;
   }
 
   function resolvePlanId(subscription) {
@@ -773,7 +811,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getSubscriptionButton(planId) {
-    return document.querySelector(`.add-subscription[data-plan-id="${planId}"]`);
+    return document.querySelector(`.add-subscription[data-plan-id="${CSS.escape(planId)}"]`);
   }
 
   function syncDropdownIcons(subscriptions) {
@@ -819,6 +857,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const shouldShowColumn = visibleRows.length > 0 && (activeCategory === "all" || category === activeCategory);
       column.classList.toggle("plan-hidden", !shouldShowColumn);
     });
+
+    const providerEmpty = document.getElementById("providerEmpty");
+    const hasVisibleColumn = document.querySelector(".provider-column:not(.plan-hidden)") !== null;
+    providerEmpty.hidden = hasVisibleColumn;
+    providerEmpty.textContent = activeCategory !== "all" && activeCategory !== "gaming"
+      ? `No built-in ${getCategoryLabel(activeCategory)} plans yet. Use Add Custom Subscription to track one.`
+      : "No plans match these filters.";
   }
 
   function toggleAddIcon(buttonElement, isAdded) {
@@ -910,7 +955,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getStoredBudget() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(budgetKey));
+      const parsed = JSON.parse(readStorage(budgetKey));
       if (parsed && ["monthly", "yearly"].includes(parsed.type)) {
         return {
           type: parsed.type,
@@ -925,7 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveBudget(budget) {
-    localStorage.setItem(budgetKey, JSON.stringify(budget));
+    writeStorage(budgetKey, JSON.stringify(budget));
   }
 
   function updateBudgetControls(subscriptions) {
@@ -967,15 +1012,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getStoredRenewalDates() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(renewalDatesKey));
-      return parsed && typeof parsed === "object" ? parsed : {};
+      const parsed = JSON.parse(readStorage(renewalDatesKey));
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
     } catch {
       return {};
     }
   }
 
   function saveRenewalDates(renewalDates) {
-    localStorage.setItem(renewalDatesKey, JSON.stringify(renewalDates));
+    writeStorage(renewalDatesKey, JSON.stringify(renewalDates));
   }
 
   function saveRenewalDate(planId, renewalDate) {
@@ -990,6 +1035,22 @@ document.addEventListener("DOMContentLoaded", () => {
       delete renewalDates[planId];
     }
     saveRenewalDates(renewalDates);
+  }
+
+  function updateRenewalDate(input) {
+    const planId = input.getAttribute("data-plan-id");
+    saveRenewalDate(planId, input.value);
+
+    const subscriptions = getStoredSubscriptions();
+    const subscription = subscriptions.find((item) => item.id === planId);
+    const status = input.closest(".renewal-control")?.querySelector(".renewal-status");
+    if (subscription && status) {
+      status.textContent = getRenewalStatus(subscription, input.value);
+    }
+
+    // Refresh dependent panels without re-rendering the list, which would replace the focused input.
+    renderUpcomingCharges(subscriptions);
+    renderReturnAlerts(subscriptions);
   }
 
   function removeRenewalDate(planId) {
@@ -1014,14 +1075,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextNinetyTotal = document.getElementById("nextNinetyTotal");
     const renewalDates = getStoredRenewalDates();
     const charges = getUpcomingCharges(subscriptions, renewalDates, new Date(), 90);
-    const thirtyDayTotal = charges
-      .filter((charge) => charge.daysUntil <= 30)
-      .reduce((sum, charge) => sum + charge.price, 0);
-    const ninetyDayTotal = charges.reduce((sum, charge) => sum + charge.price, 0);
+    const totals = getChargeTotals(charges);
 
     chargesList.textContent = "";
-    nextThirtyTotal.textContent = formatCurrency(thirtyDayTotal);
-    nextNinetyTotal.textContent = formatCurrency(ninetyDayTotal);
+    nextThirtyTotal.textContent = formatCurrency(totals.nextThirty);
+    nextNinetyTotal.textContent = formatCurrency(totals.nextNinety);
 
     if (!charges.length) {
       nextChargeBadge.textContent = subscriptions.length ? "Add dates" : "No dates";
@@ -1099,44 +1157,38 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getStoredGamingHours() {
-    return localStorage.getItem(gamingHoursKey) || "";
+    return readStorage(gamingHoursKey) || "";
   }
 
   function saveGamingHours(hours) {
-    localStorage.setItem(gamingHoursKey, hours || "");
+    writeStorage(gamingHoursKey, hours || "");
   }
 
   function updateGamingValue(subscriptions) {
-    const hours = Number.parseFloat(getStoredGamingHours());
+    const hoursValue = getStoredGamingHours();
     const summary = summarizeSubscriptionCosts(subscriptions);
     const valueRating = document.getElementById("valueRating");
     const costPerHour = document.getElementById("costPerHour");
     const costPerWeek = document.getElementById("costPerWeek");
     const weeklyCost = summary.monthlyAverage / 4.345;
+    const rating = getValueRating(summary.monthlyAverage, hoursValue);
+    const ratingLabels = { Great: "Great value", Good: "Good value", Watch: "Watch spend" };
 
     costPerWeek.textContent = formatCurrency(weeklyCost);
 
-    if (!Number.isFinite(hours) || hours <= 0 || summary.monthlyAverage <= 0) {
-      valueRating.textContent = hours > 0 ? "No plans" : "No hours";
+    if (!rating) {
+      valueRating.textContent = Number.parseFloat(hoursValue) > 0 ? "No plans" : "No hours";
       costPerHour.textContent = "$0.00";
       return;
     }
 
-    const hourlyCost = summary.monthlyAverage / hours;
-    costPerHour.textContent = formatCurrency(hourlyCost);
-
-    if (hourlyCost <= 2) {
-      valueRating.textContent = "Great value";
-    } else if (hourlyCost <= 5) {
-      valueRating.textContent = "Good value";
-    } else {
-      valueRating.textContent = "Watch spend";
-    }
+    costPerHour.textContent = formatCurrency(rating.hourlyCost);
+    valueRating.textContent = ratingLabels[rating.level];
   }
 
   function getStoredScenarios() {
     try {
-      const parsed = JSON.parse(localStorage.getItem(scenariosKey));
+      const parsed = JSON.parse(readStorage(scenariosKey));
       return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
@@ -1144,7 +1196,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveScenarios(scenarios) {
-    localStorage.setItem(scenariosKey, JSON.stringify(scenarios));
+    writeStorage(scenariosKey, JSON.stringify(scenarios));
   }
 
   function saveCurrentScenario() {
@@ -1169,16 +1221,29 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     scenarios.unshift(scenario);
-    saveScenarios(scenarios.slice(0, 8));
+    const droppedScenario = scenarios.length > maxScenarios ? scenarios[scenarios.length - 1] : null;
+    saveScenarios(scenarios.slice(0, maxScenarios));
     scenarioName.value = "";
     renderScenarios();
-    showToast(`Saved ${name}`);
+    renderReturnAlerts(subscriptions);
+    showToast(
+      droppedScenario
+        ? `Saved ${name}. Removed oldest scenario "${droppedScenario.name}" (limit ${maxScenarios}).`
+        : `Saved ${name}`
+    );
   }
 
   function loadScenario(scenarioId) {
     const scenario = getStoredScenarios().find((item) => item.id === scenarioId);
     if (!scenario) {
       showToast("Scenario could not be loaded", "error");
+      return;
+    }
+
+    if (
+      getStoredSubscriptions().length &&
+      !window.confirm(`Load "${scenario.name}"? This replaces your current plans, budget, and renewal dates.`)
+    ) {
       return;
     }
 
@@ -1201,6 +1266,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nextScenarios = scenarios.filter((scenario) => scenario.id !== scenarioId);
     saveScenarios(nextScenarios);
     renderScenarios();
+    renderReturnAlerts(getStoredSubscriptions());
   }
 
   function renderScenarios() {
@@ -1290,26 +1356,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const subscriptions = getScenarioSubscriptions(scenario);
       const summary = summarizeSubscriptionCosts(subscriptions);
       const charges = getUpcomingCharges(subscriptions, scenario.renewalDates || {}, new Date(), 90);
-      const nextThirty = charges
-        .filter((charge) => charge.daysUntil <= 30)
-        .reduce((sum, charge) => sum + charge.price, 0);
-      const nextNinety = charges.reduce((sum, charge) => sum + charge.price, 0);
+      const { nextThirty, nextNinety } = getChargeTotals(charges);
+      const rating = getValueRating(summary.monthlyAverage, scenario.gamingHours);
       return {
         scenario,
         subscriptions,
         summary,
         nextThirty,
         nextNinety,
-        value: getScenarioValueRating(summary, scenario.gamingHours),
+        value: rating ? rating.level : "No hours",
       };
     });
 
-    const cheapestTwelve = Math.min(...rows.map((row) => row.summary.twelveMonthProjection));
+    // Match the plan comparison rule: only highlight when there is a real choice to make.
+    const twelveMonthTotals = rows.map((row) => row.summary.twelveMonthProjection);
+    const cheapestTwelve = Math.min(...twelveMonthTotals);
+    const hasBestScenario = rows.length >= 2 && cheapestTwelve < Math.max(...twelveMonthTotals);
 
     const tbody = document.createElement("tbody");
     rows.forEach((rowData) => {
       const row = document.createElement("tr");
-      if (rowData.summary.twelveMonthProjection === cheapestTwelve) {
+      if (hasBestScenario && rowData.summary.twelveMonthProjection === cheapestTwelve) {
         row.className = "best-scenario";
       }
 
@@ -1333,24 +1400,6 @@ document.addEventListener("DOMContentLoaded", () => {
     table.append(thead, tbody);
     wrap.appendChild(table);
     return wrap;
-  }
-
-  function getScenarioValueRating(summary, hoursValue) {
-    const hours = Number.parseFloat(hoursValue);
-    if (!Number.isFinite(hours) || hours <= 0 || summary.monthlyAverage <= 0) {
-      return "No hours";
-    }
-
-    const hourlyCost = summary.monthlyAverage / hours;
-    if (hourlyCost <= 2) {
-      return "Great";
-    }
-
-    if (hourlyCost <= 5) {
-      return "Good";
-    }
-
-    return "Watch";
   }
 
   function createScenarioMetric(label, value) {
@@ -1486,11 +1535,6 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   }
 
-  function escapeCsvCell(value) {
-    const text = String(value ?? "");
-    return `"${text.replace(/"/g, '""')}"`;
-  }
-
   function renderInsights(subscriptions) {
     const insightsPanel = document.getElementById("insightsPanel");
     insightsPanel.textContent = "";
@@ -1533,7 +1577,7 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     }
 
-    const mostExpensive = rankedByTwelveMonth[rankedByTwelveMonth.length - 1];
+    const mostExpensive = rankedByTwelveMonth.length > 1 ? rankedByTwelveMonth[rankedByTwelveMonth.length - 1] : null;
     if (mostExpensive) {
       insightsPanel.appendChild(
         createInsightCard(
@@ -1818,15 +1862,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return "Add date";
     }
 
-    if (daysUntil === 0) {
-      return "Due today";
-    }
-
-    if (daysUntil === 1) {
-      return "1 day left";
-    }
-
-    return `${daysUntil} days left`;
+    const text = formatDaysUntil(daysUntil);
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   function getSubscriptionSummaryName(subscription) {
@@ -1887,11 +1924,10 @@ document.addEventListener("DOMContentLoaded", () => {
       appendCell(row, data.monthlyCost, getComparisonCellClass("monthly", data.monthlyCost));
       appendCell(row, data.threeMonthCost, getComparisonCellClass("threeMonth", data.threeMonthCost));
 
+      const twelveMonthBaseClass = getComparisonCellClass("twelveMonth", data.twelveMonthCost);
       const twelveMonthClass = lowestTwelveMonth && data.twelveMonthValue === lowestTwelveMonth.twelveMonthValue
-        ? `${getComparisonCellClass("twelveMonth", data.twelveMonthCost)} best-value`
-        : data.twelveMonthCost === "N/A"
-        ? getComparisonCellClass("twelveMonth", data.twelveMonthCost)
-        : getComparisonCellClass("twelveMonth", data.twelveMonthCost);
+        ? `${twelveMonthBaseClass} best-value`
+        : twelveMonthBaseClass;
       appendCell(row, data.twelveMonthCost, twelveMonthClass);
       tbody.appendChild(row);
     });
@@ -2046,8 +2082,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatShortDate(dateValue) {
-    const date = new Date(`${dateValue}T00:00:00`);
-    if (Number.isNaN(date.getTime())) {
+    const date = parseDateOnly(dateValue);
+    if (!date) {
       return "No date";
     }
 
