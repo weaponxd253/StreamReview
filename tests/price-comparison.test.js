@@ -40,6 +40,8 @@ test("parses and formats currency", () => {
   assert.equal(parseCurrency("$10.99"), 10.99);
   assert.equal(parseCurrency("27.99"), 27.99);
   assert.equal(formatCurrency(10.99), "$10.99");
+  assert.equal(formatCurrency(1037.28), "$1,037.28");
+  assert.equal(formatCurrency("0.5"), "$0.50");
 });
 
 test("projects monthly subscriptions", () => {

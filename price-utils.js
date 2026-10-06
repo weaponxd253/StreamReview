@@ -16,7 +16,8 @@
   }
 
   function formatCurrency(value) {
-    return `$${Number.parseFloat(value).toFixed(2)}`;
+    const amount = Number.parseFloat(value);
+    return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   function formatProjectedCost(value) {
