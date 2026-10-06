@@ -16,6 +16,7 @@ Prices are regular U.S. list prices. Each provider in `catalog.js` records when 
 - Gaming (PlayStation Plus, Xbox Game Pass, Nintendo Switch Online): checked July 20, 2026.
 - Streaming video (Netflix, Disney+, Hulu, HBO Max, Peacock, Paramount+, Apple TV, Prime Video): checked October 6, 2026.
 - Music (Spotify, Apple Music, YouTube Premium, Amazon Music Unlimited, Tidal): checked October 6, 2026.
+- Cloud storage (iCloud+, Google One, Microsoft 365, Dropbox): checked October 6, 2026.
 
 Introductory offers and trials are shown in plan details, but they are excluded from cost projections. Prime Video with Ultra is priced as the standalone plan plus the Ultra add-on. Amazon Music Unlimited lists the Prime-member and non-Prime prices as separate tiers.
 

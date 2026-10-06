@@ -13,6 +13,7 @@
     { id: "gaming", name: "Gaming", shortName: "Gaming", iconClass: "fa-solid fa-gamepad" },
     { id: "streaming", name: "Streaming Video", shortName: "Streaming", iconClass: "fa-solid fa-tv" },
     { id: "music", name: "Music", shortName: "Music", iconClass: "fa-solid fa-music" },
+    { id: "cloud", name: "Cloud Storage", shortName: "Cloud", iconClass: "fa-solid fa-cloud" },
   ];
 
   const providers = [
@@ -898,6 +899,265 @@
           ],
           plans: [
             { id: "tidal-student-monthly", label: "Monthly", price: 6.99, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "icloud",
+      name: "iCloud+",
+      shortName: "iCloud+",
+      category: "cloud",
+      planPrefix: "iCloud+",
+      iconClass: "fa-solid fa-cloud",
+      theme: { brand: "#1f5fa8", light: "#eff6ff", border: "#bfdbfe" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "icloud-50gb",
+          name: "50GB",
+          detailTitle: "iCloud+ 50GB",
+          summary: "50GB of iCloud storage · Shareable with family",
+          detailIntro: "iCloud+ with 50GB of storage:",
+          detailItems: [
+            ["Family Sharing", "Share your storage with up to five other people."],
+            ["iCloud+ Features", "Includes iCloud Private Relay and Hide My Email."],
+            ["Billing", "Apple bills iCloud+ monthly in the US."],
+          ],
+          plans: [
+            { id: "icloud-50gb-monthly", label: "Monthly", price: 0.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "icloud-200gb",
+          name: "200GB",
+          detailTitle: "iCloud+ 200GB",
+          summary: "200GB of iCloud storage · Shareable with family",
+          detailIntro: "iCloud+ with 200GB of storage:",
+          detailItems: [
+            ["Family Sharing", "Share your storage with up to five other people."],
+            ["iCloud+ Features", "Includes iCloud Private Relay and Hide My Email."],
+            ["Billing", "Apple bills iCloud+ monthly in the US."],
+          ],
+          plans: [
+            { id: "icloud-200gb-monthly", label: "Monthly", price: 2.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "icloud-2tb",
+          name: "2TB",
+          detailTitle: "iCloud+ 2TB",
+          summary: "2TB of iCloud storage · Shareable with family",
+          detailIntro: "iCloud+ with 2TB of storage:",
+          detailItems: [
+            ["Family Sharing", "Share your storage with up to five other people."],
+            ["iCloud+ Features", "Includes iCloud Private Relay and Hide My Email."],
+            ["Billing", "Apple bills iCloud+ monthly in the US."],
+          ],
+          plans: [
+            { id: "icloud-2tb-monthly", label: "Monthly", price: 9.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "icloud-6tb",
+          name: "6TB",
+          detailTitle: "iCloud+ 6TB",
+          summary: "6TB of iCloud storage · Shareable with family",
+          detailIntro: "iCloud+ with 6TB of storage:",
+          detailItems: [
+            ["Family Sharing", "Share your storage with up to five other people."],
+            ["iCloud+ Features", "Includes iCloud Private Relay and Hide My Email."],
+            ["Billing", "Apple bills iCloud+ monthly in the US."],
+          ],
+          plans: [
+            { id: "icloud-6tb-monthly", label: "Monthly", price: 29.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "icloud-12tb",
+          name: "12TB",
+          detailTitle: "iCloud+ 12TB",
+          summary: "12TB of iCloud storage · Shareable with family",
+          detailIntro: "iCloud+ with 12TB of storage:",
+          detailItems: [
+            ["Family Sharing", "Share your storage with up to five other people."],
+            ["iCloud+ Features", "Includes iCloud Private Relay and Hide My Email."],
+            ["Billing", "Apple bills iCloud+ monthly in the US."],
+          ],
+          plans: [
+            { id: "icloud-12tb-monthly", label: "Monthly", price: 59.99, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "google-one",
+      name: "Google One",
+      shortName: "Google One",
+      category: "cloud",
+      planPrefix: "Google One",
+      iconClass: "fa-brands fa-google",
+      theme: { brand: "#185abc", light: "#eef4fe", border: "#c6dafc" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "google-one-basic",
+          name: "Basic (100GB)",
+          detailTitle: "Google One Basic",
+          summary: "100GB across Drive, Gmail and Photos",
+          detailIntro: "Google One with 100GB of storage:",
+          detailItems: [
+            ["Shared Storage", "Storage is shared across Google Drive, Gmail and Google Photos."],
+            ["Family Sharing", "Share with up to five other people."],
+          ],
+          plans: [
+            { id: "google-one-basic-monthly", label: "Monthly", price: 1.99, duration: "Monthly" },
+            { id: "google-one-basic-yearly", label: "Yearly", price: 19.99, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "google-one-standard",
+          name: "Standard (200GB)",
+          detailTitle: "Google One Standard",
+          summary: "200GB across Drive, Gmail and Photos",
+          detailIntro: "Google One with 200GB of storage:",
+          detailItems: [
+            ["Shared Storage", "Storage is shared across Google Drive, Gmail and Google Photos."],
+            ["Family Sharing", "Share with up to five other people."],
+          ],
+          plans: [
+            { id: "google-one-standard-monthly", label: "Monthly", price: 2.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "google-one-premium",
+          name: "Premium (2TB)",
+          detailTitle: "Google One Premium",
+          summary: "2TB across Drive, Gmail and Photos",
+          detailIntro: "Google One with 2TB of storage:",
+          detailItems: [
+            ["Shared Storage", "Storage is shared across Google Drive, Gmail and Google Photos."],
+            ["Family Sharing", "Share with up to five other people."],
+            ["Intro Offer", "New subscribers are sometimes offered a discounted first year; renews at the regular price."],
+          ],
+          plans: [
+            { id: "google-one-premium-monthly", label: "Monthly", price: 9.99, duration: "Monthly" },
+            { id: "google-one-premium-yearly", label: "Yearly", price: 99.99, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "google-one-ai-pro",
+          name: "AI Pro (2TB)",
+          detailTitle: "Google AI Pro",
+          summary: "2TB plus Google's Gemini AI features",
+          detailIntro: "Google One's 2TB plan with Google's AI features:",
+          detailItems: [
+            ["2TB Storage", "Includes 2TB of storage."],
+            ["Gemini", "Adds Google's Gemini AI features in its apps."],
+            ["Intro Offer", "New subscribers are sometimes offered a discounted first year; renews at the regular price."],
+          ],
+          plans: [
+            { id: "google-one-ai-pro-monthly", label: "Monthly", price: 19.99, duration: "Monthly" },
+            { id: "google-one-ai-pro-yearly", label: "Yearly", price: 199.99, duration: "Yearly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "microsoft-365",
+      name: "Microsoft 365",
+      shortName: "Microsoft 365",
+      category: "cloud",
+      planPrefix: "Microsoft 365",
+      iconClass: "fa-brands fa-microsoft",
+      theme: { brand: "#b7410e", light: "#fff6f1", border: "#fed7c3" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "microsoft-365-basic",
+          name: "Basic",
+          detailTitle: "Microsoft 365 Basic",
+          summary: "100GB OneDrive · Ad-free Outlook · No Office apps",
+          detailIntro: "Microsoft 365 Basic for one person:",
+          detailItems: [
+            ["OneDrive", "100GB of OneDrive storage."],
+            ["Outlook", "Ad-free Outlook; desktop Office apps are not included."],
+          ],
+          plans: [
+            { id: "microsoft-365-basic-monthly", label: "Monthly", price: 1.99, duration: "Monthly" },
+            { id: "microsoft-365-basic-yearly", label: "Yearly", price: 19.99, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "microsoft-365-personal",
+          name: "Personal",
+          detailTitle: "Microsoft 365 Personal",
+          summary: "1TB OneDrive · Office apps · 1 person",
+          detailIntro: "Microsoft 365 Personal for one person:",
+          detailItems: [
+            ["OneDrive", "1TB of OneDrive storage."],
+            ["Office Apps", "Word, Excel, PowerPoint and Outlook."],
+          ],
+          plans: [
+            { id: "microsoft-365-personal-monthly", label: "Monthly", price: 9.99, duration: "Monthly" },
+            { id: "microsoft-365-personal-yearly", label: "Yearly", price: 99.99, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "microsoft-365-family",
+          name: "Family",
+          detailTitle: "Microsoft 365 Family",
+          summary: "Up to 6 people · 1TB OneDrive each · Office apps",
+          detailIntro: "Microsoft 365 Family for up to six people:",
+          detailItems: [
+            ["OneDrive", "1TB of OneDrive storage per person, up to 6TB total."],
+            ["Office Apps", "Word, Excel, PowerPoint and Outlook for each person."],
+          ],
+          plans: [
+            { id: "microsoft-365-family-monthly", label: "Monthly", price: 12.99, duration: "Monthly" },
+            { id: "microsoft-365-family-yearly", label: "Yearly", price: 129.99, duration: "Yearly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "dropbox",
+      name: "Dropbox",
+      shortName: "Dropbox",
+      category: "cloud",
+      planPrefix: "Dropbox",
+      iconClass: "fa-brands fa-dropbox",
+      theme: { brand: "#0047b3", light: "#eff4ff", border: "#c7d7fe" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "dropbox-plus",
+          name: "Plus",
+          detailTitle: "Dropbox Plus",
+          summary: "2TB for one person",
+          detailIntro: "Dropbox for one person:",
+          detailItems: [
+            ["2TB Storage", "2TB of storage for one user."],
+            ["Yearly Billing", "Yearly billing works out to $9.99 a month."],
+          ],
+          plans: [
+            { id: "dropbox-plus-monthly", label: "Monthly", price: 11.99, duration: "Monthly" },
+            { id: "dropbox-plus-yearly", label: "Yearly", price: 119.88, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "dropbox-family",
+          name: "Family",
+          detailTitle: "Dropbox Family",
+          summary: "2TB shared by up to 6 people",
+          detailIntro: "Dropbox for a household:",
+          detailItems: [
+            ["Shared 2TB", "2TB of storage shared by up to six people."],
+            ["Yearly Billing", "Yearly billing works out to $16.99 a month."],
+          ],
+          plans: [
+            { id: "dropbox-family-monthly", label: "Monthly", price: 19.99, duration: "Monthly" },
+            { id: "dropbox-family-yearly", label: "Yearly", price: 203.88, duration: "Yearly" },
           ],
         },
       ],
