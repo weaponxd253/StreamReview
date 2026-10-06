@@ -8,273 +8,317 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<main class="container app-shell">
-  <header class="app-header">
-    <div>
-      <p class="app-kicker">Gaming subscription planner</p>
-      <h1>StreamReview</h1>
+<body data-view="browse">
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-gamepad"></i></span>
+      <div>
+        <h1>StreamReview</h1>
+        <p class="brand-kicker">Gaming subscription planner</p>
+      </div>
+    </div>
+
+    <div class="topbar-search">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <label class="visually-hidden" for="planSearch">Search plans</label>
+      <input id="planSearch" type="search" placeholder="Search plans, tiers, platforms" autocomplete="off">
+    </div>
+
+    <button class="top-summary" type="button" data-view-target="plan" aria-label="Open my plan">
+      <strong id="topMonthly">$0.00</strong><span>/mo</span>
+      <span class="top-summary-count">· <span id="topCount">0</span> plans</span>
+    </button>
+
+    <div class="topbar-actions">
+      <button class="top-action primary" type="button" data-bs-toggle="modal" data-bs-target="#customModal">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>Custom</span>
+      </button>
+      <div class="dropdown">
+        <button class="top-action" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Export and backup">
+          <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+          <span>Export</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end export-menu">
+          <li><h6 class="dropdown-header">Share</h6></li>
+          <li><button class="dropdown-item" type="button" id="copySummary"><i class="fa-solid fa-copy" aria-hidden="true"></i> Copy summary</button></li>
+          <li><button class="dropdown-item" type="button" id="downloadCsv"><i class="fa-solid fa-file-csv" aria-hidden="true"></i> Download CSV</button></li>
+          <li><button class="dropdown-item" type="button" id="printReport"><i class="fa-solid fa-print" aria-hidden="true"></i> Print report</button></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><h6 class="dropdown-header">Backup</h6></li>
+          <li><button class="dropdown-item" type="button" id="exportBackup"><i class="fa-solid fa-download" aria-hidden="true"></i> Export backup</button></li>
+          <li>
+            <label class="dropdown-item import-backup">
+              <i class="fa-solid fa-upload" aria-hidden="true"></i> Import backup
+              <input id="importBackup" type="file" accept="application/json">
+            </label>
+          </li>
+        </ul>
+      </div>
     </div>
   </header>
 
-  <section class="sticky-summary" aria-label="Selected subscription summary">
-    <div class="summary-metric">
-      <span class="summary-label">Selected</span>
-      <strong id="stickySelectedCount">0</strong>
-    </div>
-    <div class="summary-metric">
-      <span class="summary-label">Due Today</span>
-      <strong id="stickyDueToday">$0.00</strong>
-    </div>
-    <div class="summary-metric">
-      <span class="summary-label">Monthly Avg</span>
-      <strong id="stickyMonthlyAverage">$0.00</strong>
-    </div>
-    <div class="summary-metric">
-      <span class="summary-label">12-Month</span>
-      <strong id="stickyTwelveMonth">$0.00</strong>
-    </div>
-    <button class="reset-subscriptions" type="button" id="resetSubscriptions" disabled>
-      <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
-      <span>Reset</span>
+  <nav class="sidebar" aria-label="Sections">
+    <button class="nav-item" type="button" data-view-target="browse" title="Browse">
+      <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i><span>Browse</span>
     </button>
-  </section>
+    <button class="nav-item" type="button" data-view-target="insights" title="Insights">
+      <i class="fa-solid fa-chart-simple" aria-hidden="true"></i><span>Insights</span>
+    </button>
+    <button class="nav-item" type="button" data-view-target="compare" title="Compare">
+      <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span>Compare</span>
+    </button>
+    <button class="nav-item" type="button" data-view-target="scenarios" title="Scenarios">
+      <i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Scenarios</span>
+    </button>
+  </nav>
 
-  <div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
-    <div class="offcanvas-header">
-      <h5 id="offcanvasTitle"></h5>
-      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  <main class="main" id="main">
+    <section class="view" data-view="browse" aria-labelledby="browseTitle">
+      <h2 class="visually-hidden" id="browseTitle">Browse plans</h2>
+      <div class="browse-toolbar">
+        <div id="providerTabs" class="provider-tabs" role="tablist" aria-label="Providers"></div>
+        <div class="browse-filters">
+          <label class="visually-hidden" for="categoryFilter">Category</label>
+          <select id="categoryFilter">
+            <option value="all">All categories</option>
+            <option value="gaming">Gaming</option>
+            <option value="streaming">Streaming Video</option>
+            <option value="music">Music</option>
+            <option value="cloud">Cloud Storage</option>
+            <option value="software">Software</option>
+            <option value="fitness-learning">Fitness / Learning</option>
+            <option value="custom">Custom</option>
+          </select>
+          <div class="filter-group" role="group" aria-label="Filter plans">
+            <button class="filter-button active" type="button" data-filter="all">All</button>
+            <button class="filter-button" type="button" data-filter="selected">Selected</button>
+            <button class="filter-button" type="button" data-filter="monthly">Monthly</button>
+            <button class="filter-button" type="button" data-filter="annual">Yearly</button>
+          </div>
+        </div>
+      </div>
+      <p id="startHint" class="start-hint">
+        <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+        Select any plan to add it. Your plan and totals update as you go.
+      </p>
+      <div id="providerGrid" class="provider-grid"></div>
+      <p id="providerEmpty" class="provider-empty" aria-live="polite" hidden></p>
+    </section>
+
+    <section class="view" data-view="insights" aria-labelledby="insightsTitle">
+      <h2 class="view-title" id="insightsTitle">Insights</h2>
+      <div id="returnAlerts" class="return-alerts" aria-live="polite"></div>
+      <p id="insightsEmpty" class="view-empty">Add a plan to see your budget, upcoming charges and savings.</p>
+      <div class="decision-tools" id="decisionTools">
+        <section class="budget-panel" aria-label="Budget tracker">
+          <div class="panel-heading">
+            <h3>Budget Tracker</h3>
+            <div class="budget-toggle" role="group" aria-label="Budget type">
+              <button class="budget-type active" type="button" data-budget-type="monthly">Monthly</button>
+              <button class="budget-type" type="button" data-budget-type="yearly">Yearly</button>
+            </div>
+          </div>
+          <label class="budget-input-label" for="budgetAmount">Budget amount</label>
+          <div class="budget-input-wrap">
+            <span>$</span>
+            <input id="budgetAmount" type="number" min="0" step="1" inputmode="decimal" placeholder="e.g. 40">
+          </div>
+          <p id="budgetStatus" class="budget-status neutral">Set a budget to track your plan stack.</p>
+        </section>
+
+        <section class="recommendation-panel" aria-label="Recommendations">
+          <div class="panel-heading">
+            <h3>Smart Recommendations</h3>
+          </div>
+          <div id="insightsPanel" class="insights-grid"></div>
+        </section>
+
+        <section class="upcoming-panel" aria-label="Upcoming charges">
+          <div class="panel-heading">
+            <h3>Upcoming Charges</h3>
+            <span id="nextChargeBadge" class="panel-badge is-empty">No dates yet</span>
+          </div>
+          <div class="charge-metrics">
+            <div>
+              <span>Next 30 Days</span>
+              <strong id="nextThirtyTotal">$0.00</strong>
+            </div>
+            <div>
+              <span>Next 90 Days</span>
+              <strong id="nextNinetyTotal">$0.00</strong>
+            </div>
+          </div>
+          <ul id="upcomingChargesList" class="upcoming-list"></ul>
+        </section>
+
+        <section class="value-panel" aria-label="Gaming value calculator">
+          <div class="panel-heading">
+            <h3>Gaming Value</h3>
+            <span id="valueRating" class="panel-badge is-empty">No hours yet</span>
+          </div>
+          <label class="budget-input-label" for="gamingHours">Monthly gaming hours</label>
+          <div class="budget-input-wrap">
+            <i class="fa-solid fa-clock" aria-hidden="true"></i>
+            <input id="gamingHours" type="number" min="0" step="1" inputmode="decimal" placeholder="e.g. 20">
+          </div>
+          <div class="value-metrics">
+            <div>
+              <span>Per Hour</span>
+              <strong id="costPerHour">$0.00</strong>
+            </div>
+            <div>
+              <span>Per Week</span>
+              <strong id="costPerWeek">$0.00</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" data-view="compare" aria-labelledby="compareTitle">
+      <h2 class="view-title" id="compareTitle">Compare</h2>
+      <p id="compareEmpty" class="view-empty">Add plans to compare their monthly, 3-month and 12-month costs.</p>
+      <div id="priceBreakdown" class="price-breakdown-container"></div>
+    </section>
+
+    <section class="view" data-view="scenarios" aria-labelledby="scenariosTitle">
+      <div class="view-heading">
+        <h2 class="view-title" id="scenariosTitle">Scenarios</h2>
+        <div class="scenario-save">
+          <label class="visually-hidden" for="scenarioName">Scenario name</label>
+          <input id="scenarioName" type="text" maxlength="40" placeholder="Name this setup">
+          <button class="scenario-save-button" type="button" id="saveScenario">
+            <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+            <span>Save current plan</span>
+          </button>
+        </div>
+      </div>
+      <div id="scenarioList" class="scenario-grid"></div>
+    </section>
+  </main>
+
+  <aside class="plan-rail" id="yourSubscriptions" aria-labelledby="planTitle">
+    <div class="rail-header">
+      <div class="rail-title-row">
+        <h2 id="planTitle">My plan</h2>
+        <button class="reset-subscriptions" type="button" id="resetSubscriptions" disabled>
+          <i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i>
+          <span>Reset</span>
+        </button>
+      </div>
+      <div class="rail-total">
+        <strong id="stickyMonthlyAverage">$0.00</strong><span>/mo average</span>
+      </div>
+      <dl class="rail-metrics">
+        <div><dt>Plans</dt><dd id="stickySelectedCount">0</dd></div>
+        <div><dt>12-month</dt><dd id="stickyTwelveMonth">$0.00</dd></div>
+        <div><dt>Per cycle</dt><dd id="stickyDueToday">$0.00</dd></div>
+      </dl>
     </div>
-    <div class="offcanvas-body" id="offcanvasContent">
-      <!-- Dynamic content goes here -->
+
+    <div class="rail-body">
+      <div id="emptyState" class="empty-state">
+        No plans yet. Pick one from Browse, or add a custom subscription.
+      </div>
+      <ul id="subscriptionList" class="subscription-list"></ul>
+      <div id="railExtras" class="rail-extras">
+        <div id="railSavings"></div>
+        <button class="rail-row" type="button" data-view-target="insights" id="railBudget"></button>
+        <button class="rail-row" type="button" data-view-target="insights" id="railNextCharge"></button>
+      </div>
+    </div>
+  </aside>
+
+  <nav class="tabbar" aria-label="Sections">
+    <button class="tab-item" type="button" data-view-target="browse">
+      <i class="fa-solid fa-table-cells-large" aria-hidden="true"></i><span>Browse</span>
+    </button>
+    <button class="tab-item" type="button" data-view-target="plan">
+      <i class="fa-solid fa-list-check" aria-hidden="true"></i><span>My plan</span>
+      <span class="tab-badge" id="tabPlanCount" hidden>0</span>
+    </button>
+    <button class="tab-item" type="button" data-view-target="insights">
+      <i class="fa-solid fa-chart-simple" aria-hidden="true"></i><span>Insights</span>
+    </button>
+    <button class="tab-item" type="button" data-view-target="compare">
+      <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span>Compare</span>
+    </button>
+    <button class="tab-item" type="button" data-view-target="scenarios">
+      <i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Scenarios</span>
+    </button>
+  </nav>
+</div>
+
+<div class="modal fade" id="customModal" tabindex="-1" aria-labelledby="customModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="customModalTitle">Add custom subscription</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="customSubscriptionForm" class="custom-form">
+        <div class="modal-body">
+          <label class="span-2">
+            <span>Name</span>
+            <input id="customName" type="text" maxlength="60" placeholder="Netflix, Spotify, iCloud">
+          </label>
+          <label>
+            <span>Category</span>
+            <select id="customCategory">
+              <option value="streaming">Streaming Video</option>
+              <option value="music">Music</option>
+              <option value="cloud">Cloud Storage</option>
+              <option value="software">Software</option>
+              <option value="fitness-learning">Fitness / Learning</option>
+              <option value="gaming">Gaming</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+          <label>
+            <span>Price</span>
+            <input id="customPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="12.99">
+          </label>
+          <label>
+            <span>Billing</span>
+            <select id="customDuration">
+              <option value="Monthly">Monthly</option>
+              <option value="3 Months">3 Months</option>
+              <option value="Yearly">Yearly</option>
+            </select>
+          </label>
+          <label>
+            <span>Renewal date</span>
+            <input id="customRenewal" type="date">
+          </label>
+          <label class="span-2">
+            <span>Notes</span>
+            <input id="customNotes" type="text" maxlength="80" placeholder="Optional">
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="modal-cancel" data-bs-dismiss="modal">Cancel</button>
+          <button class="custom-add-button" type="submit">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span>Add subscription</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <section class="provider-section" aria-label="Subscription providers">
-    <div class="provider-toolbar" aria-label="Plan filters and search">
-      <div class="toolbar-field">
-        <label for="planSearch">Search</label>
-        <input id="planSearch" type="search" placeholder="Find plans, tiers, platforms">
-      </div>
-      <div class="toolbar-field">
-        <label for="categoryFilter">Category</label>
-        <select id="categoryFilter">
-          <option value="all">All categories</option>
-          <option value="gaming">Gaming</option>
-          <option value="streaming">Streaming Video</option>
-          <option value="music">Music</option>
-          <option value="cloud">Cloud Storage</option>
-          <option value="software">Software</option>
-          <option value="fitness-learning">Fitness / Learning</option>
-          <option value="custom">Custom</option>
-        </select>
-      </div>
-      <div class="filter-cluster">
-        <span>Show</span>
-        <div class="filter-group" role="group" aria-label="Filter plans">
-          <button class="filter-button active" type="button" data-filter="all">All</button>
-          <button class="filter-button" type="button" data-filter="selected">Selected</button>
-          <button class="filter-button" type="button" data-filter="monthly">Monthly</button>
-          <button class="filter-button" type="button" data-filter="annual">Annual</button>
-        </div>
-      </div>
-    </div>
-    <p id="startHint" class="start-hint">
-      <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
-      Pick a platform, then select any plan to add it. Your totals update as you go.
-    </p>
-    <div id="providerGrid" class="row provider-grid g-4"></div>
-    <p id="providerEmpty" class="provider-empty" aria-live="polite" hidden></p>
-  </section>
-
-  <button id="viewPlanButton" class="view-plan-button" type="button" hidden>
-    <i class="fa-solid fa-list-check" aria-hidden="true"></i>
-    <span>View my plan (<span id="viewPlanCount">0</span>)</span>
-  </button>
-
-  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
-    <!-- Toasts will be dynamically added here -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="descriptionOffcanvas" aria-labelledby="offcanvasTitle">
+  <div class="offcanvas-header">
+    <h5 id="offcanvasTitle"></h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
+  <div class="offcanvas-body" id="offcanvasContent"></div>
+</div>
 
-  <section class="summary-section">
-    <div class="row mt-4">
-      <div class="col">
-        <div class="subscriptions-container card" id="yourSubscriptions">
-          <h5 class="card-header">Your Current Subscriptions</h5>
-          <div class="card-body">
-            <div id="returnAlerts" class="return-alerts" aria-live="polite"></div>
-            <div id="subscriptionOverview" class="subscription-overview"></div>
-            <ul id="subscriptionList" class="list-group">
-              <!-- Dynamically populated list -->
-            </ul>
-            <div id="emptyState" class="empty-state" style="display: none;">
-              Choose a platform plan or add a custom subscription to start.
-            </div>
-            <div class="decision-tools" id="decisionTools">
-              <section class="budget-panel" aria-label="Budget tracker">
-                <div class="panel-heading">
-                  <h6>Budget Tracker</h6>
-                  <div class="budget-toggle" role="group" aria-label="Budget type">
-                    <button class="budget-type active" type="button" data-budget-type="monthly">Monthly</button>
-                    <button class="budget-type" type="button" data-budget-type="yearly">Yearly</button>
-                  </div>
-                </div>
-                <label class="budget-input-label" for="budgetAmount">Budget amount</label>
-                <div class="budget-input-wrap">
-                  <span>$</span>
-                  <input id="budgetAmount" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
-                </div>
-                <p id="budgetStatus" class="budget-status neutral">Set a budget to track your plan stack.</p>
-              </section>
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
 
-              <section class="recommendation-panel" aria-label="Recommendations">
-                <div class="panel-heading">
-                  <h6>Smart Recommendations</h6>
-                </div>
-                <div id="insightsPanel" class="insights-grid"></div>
-              </section>
-
-              <section class="upcoming-panel" aria-label="Upcoming charges">
-                <div class="panel-heading">
-                  <h6>Upcoming Charges</h6>
-                  <span id="nextChargeBadge" class="panel-badge is-empty">No dates yet</span>
-                </div>
-                <div class="charge-metrics">
-                  <div>
-                    <span>Next 30 Days</span>
-                    <strong id="nextThirtyTotal">$0.00</strong>
-                  </div>
-                  <div>
-                    <span>Next 90 Days</span>
-                    <strong id="nextNinetyTotal">$0.00</strong>
-                  </div>
-                </div>
-                <ul id="upcomingChargesList" class="upcoming-list"></ul>
-              </section>
-
-              <section class="value-panel" aria-label="Gaming value calculator">
-                <div class="panel-heading">
-                  <h6>Gaming Value</h6>
-                  <span id="valueRating" class="panel-badge is-empty">No hours yet</span>
-                </div>
-                <label class="budget-input-label" for="gamingHours">Monthly gaming hours</label>
-                <div class="budget-input-wrap">
-                  <i class="fa-solid fa-clock" aria-hidden="true"></i>
-                  <input id="gamingHours" type="number" min="0" step="1" inputmode="decimal" placeholder="0">
-                </div>
-                <div class="value-metrics">
-                  <div>
-                    <span>Per Hour</span>
-                    <strong id="costPerHour">$0.00</strong>
-                  </div>
-                  <div>
-                    <span>Per Week</span>
-                    <strong id="costPerWeek">$0.00</strong>
-                  </div>
-                </div>
-              </section>
-            </div>
-          </div>
-        </div>
-        <section class="custom-section card" aria-label="Custom subscription">
-          <div class="card-header custom-header">
-            <h5>Add Custom Subscription</h5>
-          </div>
-          <div class="card-body">
-            <form id="customSubscriptionForm" class="custom-form">
-              <label>
-                <span>Name</span>
-                <input id="customName" type="text" maxlength="60" placeholder="Netflix, Spotify, iCloud">
-              </label>
-              <label>
-                <span>Category</span>
-                <select id="customCategory">
-                  <option value="streaming">Streaming Video</option>
-                  <option value="music">Music</option>
-                  <option value="cloud">Cloud Storage</option>
-                  <option value="software">Software</option>
-                  <option value="fitness-learning">Fitness / Learning</option>
-                  <option value="gaming">Gaming</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </label>
-              <label>
-                <span>Price</span>
-                <input id="customPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="12.99">
-              </label>
-              <label>
-                <span>Billing</span>
-                <select id="customDuration">
-                  <option value="Monthly">Monthly</option>
-                  <option value="3 Months">3 Months</option>
-                  <option value="Yearly">Yearly</option>
-                </select>
-              </label>
-              <label>
-                <span>Renewal</span>
-                <input id="customRenewal" type="date">
-              </label>
-              <label>
-                <span>Notes</span>
-                <input id="customNotes" type="text" maxlength="80" placeholder="Optional">
-              </label>
-              <button class="custom-add-button" type="submit">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i>
-                <span>Add Custom</span>
-              </button>
-            </form>
-          </div>
-        </section>
-        <section class="scenario-section card" aria-label="Saved scenarios">
-          <div class="card-header scenario-header">
-            <h5>Saved Scenarios</h5>
-            <div class="scenario-save">
-              <input id="scenarioName" type="text" maxlength="40" placeholder="Scenario name">
-              <button class="scenario-save-button" type="button" id="saveScenario">
-                <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
-                <span>Save</span>
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <div id="scenarioList" class="scenario-grid"></div>
-          </div>
-        </section>
-        <div id="priceBreakdown" class="price-breakdown-container mt-4">
-          <!-- Price breakdown will be dynamically generated here -->
-        </div>
-        <section class="export-section card" aria-label="Export and backup">
-          <div class="card-header export-header">
-            <h5>Export And Backup</h5>
-          </div>
-          <div class="card-body export-actions">
-            <button class="export-button" type="button" id="copySummary">
-              <i class="fa-solid fa-copy" aria-hidden="true"></i>
-              <span>Copy Summary</span>
-            </button>
-            <button class="export-button" type="button" id="downloadCsv">
-              <i class="fa-solid fa-file-csv" aria-hidden="true"></i>
-              <span>Download CSV</span>
-            </button>
-            <button class="export-button" type="button" id="printReport">
-              <i class="fa-solid fa-print" aria-hidden="true"></i>
-              <span>Print Report</span>
-            </button>
-            <button class="export-button" type="button" id="exportBackup">
-              <i class="fa-solid fa-download" aria-hidden="true"></i>
-              <span>Export Backup</span>
-            </button>
-            <label class="import-backup">
-              <i class="fa-solid fa-upload" aria-hidden="true"></i>
-              <span>Import Backup</span>
-              <input id="importBackup" type="file" accept="application/json">
-            </label>
-          </div>
-        </section>
-      </div>
-    </div>
-  </section>
-</main>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="price-utils.js"></script>
 <script src="script.js"></script>
