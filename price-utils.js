@@ -266,6 +266,34 @@
       .sort((a, b) => a.date.localeCompare(b.date));
   }
 
+  // Per-month cost of each billing option in a tier, how much each saves versus paying
+  // monthly, and which option is cheapest per month (only when there is a real choice).
+  function getBillingOptionValues(plans) {
+    const rates = plans.map((plan) => {
+      const months = getBillingIntervalMonths(plan.duration);
+      return months ? parseCurrency(plan.price) / months : null;
+    });
+    const monthlyIndex = plans.findIndex((plan) => getBillingIntervalMonths(plan.duration) === 1);
+    const monthlyRate = monthlyIndex === -1 ? null : rates[monthlyIndex];
+    const validRates = rates.filter(Number.isFinite);
+    const lowestRate = validRates.length > 1 && Math.min(...validRates) < Math.max(...validRates)
+      ? Math.min(...validRates)
+      : null;
+
+    return plans.map((plan, index) => {
+      const perMonth = rates[index];
+      const savingsPercent = Number.isFinite(monthlyRate) && index !== monthlyIndex && perMonth < monthlyRate
+        ? Math.round((1 - perMonth / monthlyRate) * 100)
+        : 0;
+
+      return {
+        perMonth,
+        savingsPercent,
+        isBestValue: lowestRate !== null && perMonth === lowestRate,
+      };
+    });
+  }
+
   function getChargeTotals(charges) {
     return charges.reduce(
       (totals, charge) => {
@@ -314,6 +342,7 @@
     formatDateInput,
     formatProjectedCost,
     getBestTwelveMonthProjection,
+    getBillingOptionValues,
     getBillingIntervalMonths,
     getChargeTotals,
     getComparableCost,
