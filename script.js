@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formatCurrency,
     formatDateInput,
     getBestTwelveMonthProjection,
+    getBillingIntervalMonths,
     getChargeTotals,
     getComparableCost,
     getDaysUntil,
@@ -21,13 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
     summarizeSubscriptionCosts,
     getUpcomingCharges,
   } = window.StreamReviewPriceUtils;
+  const uiStateKey = "streamReviewUi";
   const maxScenarios = 8;
+  const mainViews = ["browse", "insights", "compare", "scenarios"];
   const compactLayoutQuery = window.matchMedia("(max-width: 991.98px)");
   let storageWarningShown = false;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
   let activeCategory = "all";
   let activeSearch = "";
+  let activeView = "browse";
+  let activeMainView = "browse";
+  let activeProviderId = "";
 
   const providers = [
     {
@@ -36,8 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "PlayStation Plus",
       iconClass: "fa-brands fa-playstation",
-      buttonId: "ps",
-      collapseId: "collapsePS",
       headerClass: "psHeader",
       rowClass: "psSubheader",
       questionClass: "psQuestion",
@@ -98,8 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "Xbox",
       iconClass: "fa-brands fa-xbox",
-      buttonId: "xbox",
-      collapseId: "collapseXbox",
       headerClass: "xboxHeader",
       rowClass: "xboxSubheader",
       questionClass: "xboxQuestion",
@@ -171,8 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "Nintendo Switch Online",
       iconClass: "fa-solid fa-gamepad",
-      buttonId: "nintendo",
-      collapseId: "collapseNintendo",
       headerClass: "nintendoHeader",
       rowClass: "nintendoSubHeader",
       questionClass: "nintendoQuestion",
@@ -240,25 +240,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const { planById, tierById, legacyPlanToId } = buildIndexes(providers);
 
+  activeProviderId = providers[0].id;
   renderProviders();
-  openDefaultProviders();
-  setupViewPlanButton();
+  restoreUiState();
   loadSubscriptions();
+  setView(activeView, { persist: false });
 
-  // On narrow screens the providers stack, so keep only one open at a time.
-  document.addEventListener("show.bs.collapse", (e) => {
-    if (!compactLayoutQuery.matches || !e.target.classList.contains("multi-collapse")) {
-      return;
+  // "My plan" is its own screen only on the stacked layout; on wide screens it is always visible.
+  compactLayoutQuery.addEventListener("change", () => {
+    if (activeView === "plan" && !compactLayoutQuery.matches) {
+      setView(activeMainView);
     }
+  });
 
-    document.querySelectorAll(".multi-collapse.show").forEach((openCollapse) => {
-      if (openCollapse !== e.target) {
-        bootstrap.Collapse.getOrCreateInstance(openCollapse, { toggle: false }).hide();
-      }
-    });
+  window.addEventListener("hashchange", () => {
+    const view = location.hash.slice(1);
+    if (view && view !== activeView) {
+      setView(view, { persist: false });
+    }
   });
 
   document.body.addEventListener("click", (e) => {
+    const viewTarget = e.target.closest("[data-view-target]");
+    if (viewTarget) {
+      setView(viewTarget.getAttribute("data-view-target"));
+    }
+
+    const providerTab = e.target.closest(".provider-tab");
+    if (providerTab) {
+      selectProvider(providerTab.getAttribute("data-provider-id"));
+    }
+
     const planRow = e.target.closest(".list-group-item[data-plan-id]");
     const subscriptionButton = planRow ? planRow.querySelector(".add-subscription") : null;
     if (subscriptionButton) {
@@ -317,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const subscriptions = getStoredSubscriptions();
       updateBudgetControls(subscriptions);
       renderReturnAlerts(subscriptions);
+      renderRailExtras(subscriptions);
     }
 
     const switchButton = e.target.closest(".switch-plan");
@@ -360,6 +373,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  document.getElementById("providerTabs").addEventListener("keydown", (e) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) {
+      return;
+    }
+
+    const tabs = [...document.querySelectorAll(".provider-tab:not(:disabled)")];
+    const currentIndex = tabs.indexOf(document.activeElement);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    e.preventDefault();
+    const lastIndex = tabs.length - 1;
+    const nextIndex = {
+      ArrowLeft: currentIndex === 0 ? lastIndex : currentIndex - 1,
+      ArrowRight: currentIndex === lastIndex ? 0 : currentIndex + 1,
+      Home: 0,
+      End: lastIndex,
+    }[e.key];
+    tabs[nextIndex].focus();
+    selectProvider(tabs[nextIndex].getAttribute("data-provider-id"));
+  });
+
   document.body.addEventListener("submit", (e) => {
     if (e.target.id === "customSubscriptionForm") {
       e.preventDefault();
@@ -375,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const subscriptions = getStoredSubscriptions();
       updateBudgetControls(subscriptions);
       renderReturnAlerts(subscriptions);
+      renderRailExtras(subscriptions);
     }
 
     if (e.target.classList.contains("renewal-date-input")) {
@@ -388,6 +425,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (e.target.id === "planSearch") {
       activeSearch = e.target.value.trim().toLowerCase();
+      if (activeView !== "browse") {
+        setView("browse");
+      }
       applyPlanFilter();
     }
   });
@@ -434,52 +474,66 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderProviders() {
+    const providerTabs = document.getElementById("providerTabs");
     const providerGrid = document.getElementById("providerGrid");
-    providerGrid.innerHTML = "";
+    providerTabs.textContent = "";
+    providerGrid.textContent = "";
 
     providers.forEach((provider) => {
-      providerGrid.appendChild(createProviderColumn(provider));
+      providerTabs.appendChild(createProviderTab(provider));
+      providerGrid.appendChild(createProviderPanel(provider));
     });
   }
 
-  function createProviderColumn(provider) {
-    const column = document.createElement("div");
-    column.className = "col-12 col-lg-4 provider-column";
-    column.setAttribute("data-category", provider.category || "gaming");
+  function createProviderTab(provider) {
+    const tab = document.createElement("button");
+    tab.className = `provider-tab provider-tab-${provider.id}`;
+    tab.type = "button";
+    tab.id = `tab-${provider.id}`;
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", `panel-${provider.id}`);
+    tab.setAttribute("data-provider-id", provider.id);
 
-    const buttonRow = document.createElement("div");
-    buttonRow.className = "row";
+    const icon = document.createElement("i");
+    icon.className = provider.iconClass;
+    icon.setAttribute("aria-hidden", "true");
 
-    const buttonCol = document.createElement("div");
-    buttonCol.className = "col";
+    const name = document.createElement("span");
+    name.className = "tab-full";
+    name.textContent = provider.name;
 
-    const collapseButton = document.createElement("button");
-    collapseButton.className = "btn btn-primary";
-    collapseButton.id = provider.buttonId;
-    collapseButton.type = "button";
-    collapseButton.setAttribute("data-bs-toggle", "collapse");
-    collapseButton.setAttribute("data-bs-target", `#${provider.collapseId}`);
-    collapseButton.setAttribute("aria-expanded", "false");
-    collapseButton.setAttribute("aria-controls", provider.collapseId);
+    // Narrow screens show just the brand ("PlayStation", "Xbox", "Nintendo").
+    const shortName = document.createElement("span");
+    shortName.className = "tab-short";
+    shortName.textContent = provider.name.split(" ")[0];
 
-    const providerIcon = document.createElement("i");
-    providerIcon.className = provider.iconClass;
-    providerIcon.setAttribute("aria-hidden", "true");
-    collapseButton.append(providerIcon, document.createTextNode(` ${provider.name}`));
+    const count = document.createElement("span");
+    count.className = "tab-count";
+    count.hidden = true;
 
-    buttonCol.appendChild(collapseButton);
-    buttonRow.appendChild(buttonCol);
-    column.appendChild(buttonRow);
+    tab.append(icon, name, shortName, count);
+    return tab;
+  }
 
-    const collapseRow = document.createElement("div");
-    collapseRow.className = "row";
+  function createProviderPanel(provider) {
+    const panel = document.createElement("section");
+    panel.className = `provider-column provider-panel-${provider.id}`;
+    panel.id = `panel-${provider.id}`;
+    panel.setAttribute("role", "tabpanel");
+    panel.setAttribute("aria-labelledby", `tab-${provider.id}`);
+    panel.setAttribute("data-provider-id", provider.id);
+    panel.setAttribute("data-category", provider.category || "gaming");
 
-    const collapse = document.createElement("div");
-    collapse.className = "collapse multi-collapse";
-    collapse.id = provider.collapseId;
+    // Only shown while searching or filtering, when several providers are listed together.
+    const title = document.createElement("h3");
+    title.className = "provider-panel-title";
+    const titleIcon = document.createElement("i");
+    titleIcon.className = provider.iconClass;
+    titleIcon.setAttribute("aria-hidden", "true");
+    title.append(titleIcon, ` ${provider.name}`);
 
     const tierList = document.createElement("ul");
-    tierList.className = "list-group list-group-flush";
+    tierList.className = "list-group list-group-flush tier-list";
 
     provider.tiers.forEach((tier) => {
       const tierItem = document.createElement("li");
@@ -497,9 +551,9 @@ document.addEventListener("DOMContentLoaded", () => {
       infoButton.setAttribute("aria-label", `Show details for ${tier.detailTitle}`);
 
       const infoIcon = document.createElement("i");
-      infoIcon.className = "fa-solid fa-circle-question";
+      infoIcon.className = "fa-solid fa-circle-info";
       infoIcon.setAttribute("aria-hidden", "true");
-      infoButton.appendChild(infoIcon);
+      infoButton.append(infoIcon, " Details");
 
       tierItem.append(tierName, infoButton);
       tierList.appendChild(tierItem);
@@ -512,11 +566,8 @@ document.addEventListener("DOMContentLoaded", () => {
       tierList.appendChild(planList);
     });
 
-    collapse.appendChild(tierList);
-    collapseRow.appendChild(collapse);
-    column.appendChild(collapseRow);
-
-    return column;
+    panel.append(title, tierList);
+    return panel;
   }
 
   function createPlanRow(provider, tier, plan) {
@@ -531,13 +582,16 @@ document.addEventListener("DOMContentLoaded", () => {
     label.className = "fw-bold";
     label.textContent = plan.label;
 
-    const dollarIcon = document.createElement("i");
-    dollarIcon.className = "fa-solid fa-dollar-sign";
-    dollarIcon.setAttribute("aria-hidden", "true");
-
     const price = document.createElement("span");
     price.className = "plan-price";
-    price.textContent = formatPrice(plan.price);
+    const months = getBillingIntervalMonths(plan.duration);
+    const priceAmount = document.createElement("strong");
+    priceAmount.textContent = formatCurrency(plan.price);
+    const priceNote = document.createElement("small");
+    priceNote.textContent = months === 1
+      ? "per month"
+      : `${formatCurrency(plan.price / months)}/mo`;
+    price.append(priceAmount, priceNote);
 
     const selectedBadge = document.createElement("span");
     selectedBadge.className = "selected-pill";
@@ -559,42 +613,102 @@ document.addEventListener("DOMContentLoaded", () => {
     addIcon.setAttribute("aria-hidden", "true");
     addButton.appendChild(addIcon);
 
-    row.append(label, dollarIcon, price, selectedBadge, addButton);
+    row.append(label, price, selectedBadge, addButton);
     return row;
   }
 
-  // Start with plans visible: every provider on wide screens, the first one when stacked.
-  function openDefaultProviders() {
-    const providersToOpen = compactLayoutQuery.matches ? providers.slice(0, 1) : providers;
+  function restoreUiState() {
+    let stored = {};
+    try {
+      stored = JSON.parse(readStorage(uiStateKey)) || {};
+    } catch {
+      stored = {};
+    }
 
-    providersToOpen.forEach((provider) => {
-      document.getElementById(provider.collapseId).classList.add("show");
-      document.getElementById(provider.buttonId).setAttribute("aria-expanded", "true");
-    });
-  }
+    if (providers.some((provider) => provider.id === stored.provider)) {
+      activeProviderId = stored.provider;
+    }
 
-  function setupViewPlanButton() {
-    const viewPlanButton = document.getElementById("viewPlanButton");
-    const subscriptionsCard = document.getElementById("yourSubscriptions");
-
-    viewPlanButton.addEventListener("click", () => {
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      subscriptionsCard.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
-    });
-
-    if ("IntersectionObserver" in window) {
-      new IntersectionObserver(([entry]) => {
-        viewPlanButton.classList.toggle("is-offscreen-target", !entry.isIntersecting);
-      }).observe(subscriptionsCard);
-    } else {
-      viewPlanButton.classList.add("is-offscreen-target");
+    const hashView = location.hash.slice(1);
+    const requestedView = isKnownView(hashView) ? hashView : stored.view;
+    activeView = isKnownView(requestedView) ? requestedView : "browse";
+    if (mainViews.includes(stored.mainView)) {
+      activeMainView = stored.mainView;
     }
   }
 
-  function updateViewPlanButton(count) {
-    const viewPlanButton = document.getElementById("viewPlanButton");
-    viewPlanButton.hidden = count === 0;
-    document.getElementById("viewPlanCount").textContent = String(count);
+  function saveUiState() {
+    writeStorage(uiStateKey, JSON.stringify({
+      view: activeView,
+      mainView: activeMainView,
+      provider: activeProviderId,
+    }));
+  }
+
+  function isKnownView(view) {
+    return view === "plan" || mainViews.includes(view);
+  }
+
+  function setView(requestedView, { persist = true } = {}) {
+    let view = isKnownView(requestedView) ? requestedView : "browse";
+
+    // On wide screens the plan rail is always on screen, so "plan" keeps the current main view.
+    if (view === "plan" && !compactLayoutQuery.matches) {
+      view = activeMainView;
+      document.getElementById("planTitle").scrollIntoView({ block: "nearest" });
+    }
+
+    const changedMainView = view !== "plan" && view !== activeMainView;
+    activeView = view;
+    if (view !== "plan") {
+      activeMainView = view;
+    }
+
+    document.body.setAttribute("data-view", view);
+    document.querySelectorAll(".view").forEach((section) => {
+      section.classList.toggle("is-active", section.getAttribute("data-view") === activeMainView);
+    });
+    document.querySelectorAll(".nav-item, .tab-item").forEach((item) => {
+      const target = item.getAttribute("data-view-target");
+      const isCurrent = item.classList.contains("nav-item") ? target === activeMainView : target === view;
+      if (isCurrent) {
+        item.setAttribute("aria-current", "page");
+      } else {
+        item.removeAttribute("aria-current");
+      }
+    });
+
+    if (changedMainView) {
+      document.getElementById("main").scrollTop = 0;
+    }
+
+    if (persist) {
+      saveUiState();
+      if (location.hash.slice(1) !== view) {
+        history.replaceState(null, "", `#${view}`);
+      }
+    }
+  }
+
+  function selectProvider(providerId) {
+    if (!providers.some((provider) => provider.id === providerId)) {
+      return;
+    }
+
+    activeProviderId = providerId;
+    saveUiState();
+
+    // While a search or filter lists several providers, a tab jumps to that provider's results.
+    if (isNarrowingPlans()) {
+      document.getElementById(`panel-${providerId}`).scrollIntoView({ block: "start" });
+      return;
+    }
+
+    applyPlanFilter();
+  }
+
+  function isNarrowingPlans() {
+    return Boolean(activeSearch) || activeFilter !== "all" || activeCategory !== "all";
   }
 
   function switchPlan(fromPlanId, toPlanId) {
@@ -721,6 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById("customSubscriptionForm").reset();
+    bootstrap.Modal.getInstance(document.getElementById("customModal"))?.hide();
     displaySubscriptions(subscriptions);
     syncDropdownIcons(subscriptions);
     showToast(`Added ${subscription.name}`);
@@ -938,7 +1053,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.classList.toggle("plan-hidden", !shouldShow);
     });
 
-    const isNarrowing = Boolean(activeSearch) || activeFilter !== "all";
+    const isNarrowing = isNarrowingPlans();
+    document.getElementById("providerGrid").classList.toggle("is-multi", isNarrowing);
 
     document.querySelectorAll(".tier-header").forEach((tierHeader) => {
       const planList = tierHeader.nextElementSibling;
@@ -946,27 +1062,32 @@ document.addEventListener("DOMContentLoaded", () => {
       tierHeader.classList.toggle("plan-hidden", !hasVisiblePlans);
     });
 
+    // Normally one provider shows at a time. While searching or filtering, every provider
+    // with matches is listed so results are never hidden behind another tab.
     document.querySelectorAll(".provider-column").forEach((column) => {
+      const providerId = column.getAttribute("data-provider-id");
       const visibleRows = column.querySelectorAll(".list-group-item[data-plan-id]:not(.plan-hidden)");
       const category = column.getAttribute("data-category") || "gaming";
-      const shouldShowColumn = visibleRows.length > 0 && (activeCategory === "all" || category === activeCategory);
+      const matchCount = activeCategory === "all" || category === activeCategory ? visibleRows.length : 0;
+      const isActiveTab = !isNarrowing && providerId === activeProviderId;
+      const shouldShowColumn = isNarrowing ? matchCount > 0 : isActiveTab;
       column.classList.toggle("plan-hidden", !shouldShowColumn);
 
-      // Matches inside a closed provider would be invisible, so open it while searching or filtering.
-      if (shouldShowColumn && isNarrowing) {
-        const collapse = column.querySelector(".multi-collapse");
-        if (!collapse.classList.contains("show")) {
-          collapse.classList.add("show");
-          column.querySelector("[data-bs-toggle='collapse']").setAttribute("aria-expanded", "true");
-        }
-      }
+      const tab = document.getElementById(`tab-${providerId}`);
+      const tabCount = tab.querySelector(".tab-count");
+      tab.classList.toggle("is-active", isActiveTab);
+      tab.setAttribute("aria-selected", String(isActiveTab));
+      tab.tabIndex = isActiveTab || (isNarrowing && matchCount > 0) ? 0 : -1;
+      tab.disabled = isNarrowing && matchCount === 0;
+      tabCount.hidden = !isNarrowing;
+      tabCount.textContent = String(matchCount);
     });
 
     const providerEmpty = document.getElementById("providerEmpty");
     const hasVisibleColumn = document.querySelector(".provider-column:not(.plan-hidden)") !== null;
     providerEmpty.hidden = hasVisibleColumn;
     providerEmpty.textContent = activeCategory !== "all" && activeCategory !== "gaming"
-      ? `No built-in ${getCategoryLabel(activeCategory)} plans yet. Use Add Custom Subscription to track one.`
+      ? `No built-in ${getCategoryLabel(activeCategory)} plans yet. Use + Custom to track one.`
       : "No plans match these filters.";
   }
 
@@ -996,18 +1117,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function displaySubscriptions(subscriptions) {
     const subscriptionList = document.getElementById("subscriptionList");
-    const subscriptionOverview = document.getElementById("subscriptionOverview");
     const emptyState = document.getElementById("emptyState");
     const breakdownContainer = document.getElementById("priceBreakdown");
+    const hasSubscriptions = subscriptions.length > 0;
 
     subscriptionList.textContent = "";
-    subscriptionOverview.textContent = "";
     updateStickySummary(subscriptions);
     updateDecisionTools(subscriptions);
     renderReturnAlerts(subscriptions);
+    renderRailExtras(subscriptions);
 
-    document.getElementById("decisionTools").hidden = subscriptions.length === 0;
-    document.getElementById("startHint").hidden = subscriptions.length > 0;
+    document.getElementById("decisionTools").hidden = !hasSubscriptions;
+    document.getElementById("insightsEmpty").hidden = hasSubscriptions;
+    document.getElementById("compareEmpty").hidden = hasSubscriptions;
+    document.getElementById("startHint").hidden = hasSubscriptions;
 
     if (subscriptions.length === 0) {
       emptyState.style.display = "block";
@@ -1019,7 +1142,6 @@ document.addEventListener("DOMContentLoaded", () => {
     emptyState.style.display = "none";
     subscriptionList.style.display = "block";
 
-    subscriptionOverview.appendChild(createSubscriptionOverview(subscriptions));
     groupSubscriptionsByProvider(subscriptions).forEach((group) => {
       subscriptionList.appendChild(createSubscriptionGroup(group));
     });
@@ -1040,7 +1162,99 @@ document.addEventListener("DOMContentLoaded", () => {
     monthlyAverage.textContent = summary.monthlyAverageFormatted;
     twelveMonth.textContent = summary.twelveMonthProjectionFormatted;
     resetButton.disabled = subscriptions.length === 0;
-    updateViewPlanButton(subscriptions.length);
+
+    document.getElementById("topMonthly").textContent = summary.monthlyAverageFormatted;
+    document.getElementById("topCount").textContent = String(subscriptions.length);
+    const tabPlanCount = document.getElementById("tabPlanCount");
+    tabPlanCount.hidden = subscriptions.length === 0;
+    tabPlanCount.textContent = String(subscriptions.length);
+  }
+
+  // The rail keeps the most useful signals next to the plan list: the top savings
+  // switch, budget progress and the next charge. Each links to Insights for detail.
+  function renderRailExtras(subscriptions) {
+    const railExtras = document.getElementById("railExtras");
+    const railSavings = document.getElementById("railSavings");
+    railExtras.hidden = subscriptions.length === 0;
+    railSavings.textContent = "";
+    if (!subscriptions.length) {
+      return;
+    }
+
+    const savings = findBestSavingsOpportunity(subscriptions);
+    if (savings) {
+      railSavings.appendChild(
+        createInsightCard(
+          `Save ${formatCurrency(savings.savings)} a year`,
+          savings.message,
+          "primary",
+          createSwitchButton(savings)
+        )
+      );
+    }
+
+    const summary = summarizeSubscriptionCosts(subscriptions);
+    const budget = getStoredBudget();
+    const budgetAmount = Number.parseFloat(budget.amount);
+    const railBudget = document.getElementById("railBudget");
+    if (Number.isFinite(budgetAmount) && budgetAmount > 0) {
+      const spend = budget.type === "monthly" ? summary.monthlyAverage : summary.twelveMonthProjection;
+      const ratio = spend / budgetAmount;
+      const meter = document.createElement("span");
+      meter.className = `rail-meter ${ratio > 1 ? "over" : ratio >= 0.9 ? "close" : "under"}`;
+      const meterFill = document.createElement("span");
+      meterFill.style.width = `${Math.min(100, ratio * 100)}%`;
+      meter.appendChild(meterFill);
+      fillRailRow(
+        railBudget,
+        "fa-solid fa-wallet",
+        budget.type === "monthly" ? "Monthly budget" : "Yearly budget",
+        `${formatCurrency(spend)} of ${formatCurrency(budgetAmount)}`,
+        meter
+      );
+    } else {
+      fillRailRow(railBudget, "fa-solid fa-wallet", "Budget", "Set a budget");
+    }
+
+    const charges = getUpcomingCharges(subscriptions, getStoredRenewalDates(), new Date(), 90);
+    const railNextCharge = document.getElementById("railNextCharge");
+    if (charges.length) {
+      const nextCharge = charges[0];
+      fillRailRow(
+        railNextCharge,
+        "fa-solid fa-calendar-day",
+        `Next charge · ${formatShortDate(nextCharge.date)}`,
+        `${getShortPlanName(nextCharge.plan)} · ${nextCharge.priceFormatted}`
+      );
+    } else {
+      fillRailRow(railNextCharge, "fa-solid fa-calendar-day", "Upcoming charges", "Add renewal dates to track them");
+    }
+  }
+
+  function fillRailRow(row, iconClass, label, value, extra = null) {
+    row.textContent = "";
+
+    const icon = document.createElement("i");
+    icon.className = iconClass;
+    icon.setAttribute("aria-hidden", "true");
+
+    const text = document.createElement("span");
+    text.className = "rail-row-text";
+    const labelElement = document.createElement("span");
+    labelElement.className = "rail-row-label";
+    labelElement.textContent = label;
+    const valueElement = document.createElement("strong");
+    valueElement.textContent = value;
+    text.append(labelElement, valueElement);
+    if (extra) {
+      text.appendChild(extra);
+    }
+
+    const chevron = document.createElement("i");
+    chevron.className = "fa-solid fa-chevron-right rail-row-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+
+    row.append(icon, text, chevron);
   }
 
   function updateDecisionTools(subscriptions) {
@@ -1155,6 +1369,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Refresh dependent panels without re-rendering the list, which would replace the focused input.
     renderUpcomingCharges(subscriptions);
     renderReturnAlerts(subscriptions);
+    renderRailExtras(subscriptions);
   }
 
   function removeRenewalDate(planId) {
@@ -1453,7 +1668,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
-    ["Scenario", "Plans", "Due Today", "Monthly Avg", "12-Month", "Next 30", "Next 90", "Value"].forEach((label) => {
+    ["Scenario", "Plans", "Per Cycle", "Monthly Avg", "12-Month", "Next 30", "Next 90", "Value"].forEach((label) => {
       const th = document.createElement("th");
       th.textContent = label;
       headerRow.appendChild(th);
@@ -1542,7 +1757,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const lines = [
       "StreamReview Summary",
       `Selected subscriptions: ${subscriptions.length}`,
-      `Due today: ${summary.dueTodayFormatted}`,
+      `Per billing cycle: ${summary.dueTodayFormatted}`,
       `Monthly average: ${summary.monthlyAverageFormatted}`,
       `Projected 12-month cost: ${summary.twelveMonthProjectionFormatted}`,
       "",
@@ -1807,41 +2022,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function createSubscriptionOverview(subscriptions) {
-    const summary = summarizeSubscriptionCosts(subscriptions);
-    const overview = document.createElement("div");
-    overview.className = "overview-card";
-
-    const heading = document.createElement("h6");
-    heading.textContent = "Selected Subscriptions";
-
-    const metrics = document.createElement("div");
-    metrics.className = "overview-metrics";
-    metrics.append(
-      createMetric("Count", String(subscriptions.length)),
-      createMetric("Due Today", summary.dueTodayFormatted),
-      createMetric("Monthly Average", summary.monthlyAverageFormatted),
-      createMetric("Projected 12-Month Cost", summary.twelveMonthProjectionFormatted)
-    );
-
-    overview.append(heading, metrics);
-    return overview;
-  }
-
-  function createMetric(label, value) {
-    const metric = document.createElement("div");
-    metric.className = "overview-metric";
-
-    const metricLabel = document.createElement("span");
-    metricLabel.textContent = label;
-
-    const metricValue = document.createElement("strong");
-    metricValue.textContent = value;
-
-    metric.append(metricLabel, metricValue);
-    return metric;
-  }
-
   function groupSubscriptionsByProvider(subscriptions) {
     const providerOrder = new Map(providers.map((provider, index) => [provider.id, index]));
     const groups = new Map();
@@ -1881,7 +2061,7 @@ document.addEventListener("DOMContentLoaded", () => {
     title.textContent = group.provider.name;
 
     const subtotal = document.createElement("span");
-    subtotal.textContent = `${groupSummary.twelveMonthProjectionFormatted} / 12 months`;
+    subtotal.textContent = `${groupSummary.twelveMonthProjectionFormatted}/yr`;
 
     const plans = document.createElement("ul");
     plans.className = "subscription-group-list";
