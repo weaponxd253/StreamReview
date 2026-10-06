@@ -30,209 +30,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let storageWarningShown = false;
   let activeComparisonMode = "twelveMonth";
   let activeFilter = "all";
-  let activeCategory = "all";
+  let activeCategory = "";
   let activeSearch = "";
   let activeView = "browse";
   let activeMainView = "browse";
-  let activeProviderId = "";
+  // The last provider viewed in each category, so switching categories returns to it.
+  const activeProviderByCategory = {};
 
-  const providers = [
-    {
-      id: "playstation",
-      name: "PlayStation Plus",
-      category: "gaming",
-      planPrefix: "PlayStation Plus",
-      iconClass: "fa-brands fa-playstation",
-      tiers: [
-        {
-          id: "essential",
-          name: "Essential",
-          detailTitle: "PlayStation Plus Essential",
-          detailIntro: "This is the foundational tier, providing core benefits to enhance your gaming experience:",
-          detailItems: [
-            ["Online Multiplayer Access", "Play online with friends and other players."],
-            ["Monthly Games", "Access to PS4 and PS5 games each month."],
-            ["Exclusive Discounts", "Special deals in the PlayStation Store."],
-            ["Cloud Storage", "100 GB for your game saves."],
-          ],
-          plans: [
-            { id: "ps-essential-monthly", label: "Monthly", price: 10.99, duration: "Monthly", legacyNames: ["PlayStation Essential - Monthly", "PlayStation Essential - 1 Month"] },
-            { id: "ps-essential-3-months", label: "3 Months", price: 27.99, duration: "3 Months" },
-            { id: "ps-essential-yearly", label: "Yearly", price: 79.99, duration: "Yearly" },
-          ],
-        },
-        {
-          id: "extra",
-          name: "Extra",
-          detailTitle: "PlayStation Plus Extra",
-          detailIntro: "Building upon the Essential tier, the Extra plan offers additional perks:",
-          detailItems: [
-            ["Game Catalog", "Access the PlayStation Plus Game Catalog."],
-            ["Ubisoft+ Classics", "A curated selection of Ubisoft titles."],
-          ],
-          plans: [
-            { id: "ps-extra-monthly", label: "Monthly", price: 16.99, duration: "Monthly", legacyNames: ["PlayStation Extra - Monthly", "PlayStation Extra - 1 Month"] },
-            { id: "ps-extra-3-months", label: "3 Months", price: 43.99, duration: "3 Months" },
-            { id: "ps-extra-yearly", label: "Yearly", price: 134.99, duration: "Yearly" },
-          ],
-        },
-        {
-          id: "premium",
-          name: "Premium",
-          detailTitle: "PlayStation Plus Premium",
-          detailIntro: "Offering all benefits of Essential and Extra tiers, plus exclusive features:",
-          detailItems: [
-            ["Classics Catalog", "Stream or download games from older PlayStation generations."],
-            ["Game Trials", "Try new games before buying."],
-            ["Cloud Streaming", "Play on PS4, PS5, or PC."],
-          ],
-          plans: [
-            { id: "ps-premium-monthly", label: "Monthly", price: 19.99, duration: "Monthly", legacyNames: ["PlayStation Premium - Monthly", "PlayStation Premium - 1 Month"] },
-            { id: "ps-premium-3-months", label: "3 Months", price: 54.99, duration: "3 Months" },
-            { id: "ps-premium-yearly", label: "Yearly", price: 159.99, duration: "Yearly" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "xbox",
-      name: "Xbox Game Pass",
-      category: "gaming",
-      planPrefix: "Xbox",
-      iconClass: "fa-brands fa-xbox",
-      tiers: [
-        {
-          id: "xbox-essential",
-          name: "Game Pass Essential",
-          detailTitle: "Xbox Game Pass Essential",
-          detailIntro: "Essential covers console, PC, and cloud access with online console multiplayer:",
-          detailItems: [
-            ["Platform Coverage", "Console, PC, and cloud."],
-            ["Online Console Multiplayer", "Included for supported games."],
-            ["Intro Offer", "$1 for the first month for eligible accounts; renews at the regular price."],
-          ],
-          plans: [
-            { id: "xbox-essential-monthly", label: "Monthly", price: 9.99, duration: "Monthly", legacyNames: ["Xbox Game Pass Core - Monthly"] },
-            { id: "xbox-essential-3-months", label: "3 Months", price: 24.99, duration: "3 Months", legacyNames: ["Xbox Game Pass Core - Yearly"] },
-          ],
-        },
-        {
-          id: "xbox-pc",
-          name: "Game Pass PC",
-          detailTitle: "Xbox Game Pass PC",
-          detailIntro: "PC Game Pass focuses on Windows gaming access:",
-          detailItems: [
-            ["Platform Coverage", "Windows PC."],
-            ["Day-One PC Games", "Includes day-one PC games."],
-            ["EA Play", "Included with PC Game Pass."],
-            ["Intro Offer", "$1 for 14 days for eligible accounts; renews at the regular price."],
-          ],
-          plans: [
-            { id: "xbox-pc-monthly", label: "Monthly", price: 13.99, duration: "Monthly" },
-          ],
-        },
-        {
-          id: "xbox-premium",
-          name: "Game Pass Premium",
-          detailTitle: "Xbox Game Pass Premium",
-          detailIntro: "Premium covers console, PC, and cloud at the regular monthly price:",
-          detailItems: [
-            ["Platform Coverage", "Console, PC, and cloud."],
-            ["Game Catalog", "Access the Premium Game Pass library."],
-            ["Intro Offer", "$1 for 14 days for eligible accounts; renews at the regular price."],
-          ],
-          plans: [
-            { id: "xbox-premium-monthly", label: "Monthly", price: 14.99, duration: "Monthly", legacyNames: ["Xbox Game Pass Standard - Monthly"] },
-          ],
-        },
-        {
-          id: "xbox-ultimate",
-          name: "Game Pass Ultimate",
-          detailTitle: "Xbox Game Pass Ultimate",
-          detailIntro: "Ultimate is the largest Xbox Game Pass benefit package:",
-          detailItems: [
-            ["Platform Coverage", "Console, PC, and cloud."],
-            ["Day-One Releases", "Includes day-one releases."],
-            ["Included Benefits", "Cloud gaming, EA Play, Fortnite Crew, and Ubisoft+ Classics."],
-            ["Intro Offer", "No general introductory offer shown."],
-          ],
-          plans: [
-            { id: "xbox-ultimate-monthly", label: "Monthly", price: 22.99, duration: "Monthly" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "nintendo",
-      name: "Nintendo Switch Online",
-      category: "gaming",
-      planPrefix: "Nintendo Switch Online",
-      iconClass: "fa-solid fa-gamepad",
-      tiers: [
-        {
-          id: "nintendo-switch-online",
-          name: "Standard Individual",
-          detailTitle: "Nintendo Switch Online Standard Individual",
-          detailIntro: "The standard individual membership covers core Nintendo Switch Online features:",
-          detailItems: [
-            ["Online Play", "Play compatible Nintendo Switch games online."],
-            ["Classic Games", "Access selected classic game libraries."],
-            ["Cloud Saves", "Back up supported save data online."],
-            ["Trial", "Nintendo offers a seven-day trial of the standard individual membership."],
-          ],
-          plans: [
-            { id: "nintendo-switch-monthly", label: "Monthly", price: 3.99, duration: "Monthly", legacyNames: ["Nintendo Switch Online - Monthly", "Nintendo Switch Online - 1 Month"] },
-            { id: "nintendo-switch-3-months", label: "3 Months", price: 7.99, duration: "3 Months" },
-            { id: "nintendo-switch-yearly", label: "Yearly", price: 19.99, duration: "Yearly" },
-          ],
-        },
-        {
-          id: "nintendo-family",
-          name: "Standard Family",
-          detailTitle: "Nintendo Switch Online Standard Family",
-          detailIntro: "Family Membership extends Nintendo Switch Online access across multiple accounts:",
-          detailItems: [
-            ["Shared Access", "Supports up to 8 Nintendo Accounts."],
-            ["Online Play", "Online multiplayer for supported games."],
-            ["Classic Games and Cloud Saves", "Includes core Switch Online benefits."],
-          ],
-          plans: [
-            { id: "nintendo-family-yearly", label: "Yearly", price: 34.99, duration: "Yearly", legacyNames: ["Nintendo Family Membership - Monthly"] },
-          ],
-        },
-        {
-          id: "nintendo-expansion-individual",
-          name: "Expansion Pack Individual",
-          detailTitle: "Nintendo Switch Online + Expansion Pack Individual",
-          detailIntro: "Expansion Pack is offered as a 12-month membership with expanded benefits:",
-          detailItems: [
-            ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
-            ["Availability", "Offered as a 12-month membership."],
-          ],
-          plans: [
-            { id: "nintendo-expansion-yearly", label: "Yearly", price: 49.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly"] },
-          ],
-        },
-        {
-          id: "nintendo-expansion-family",
-          name: "Expansion Pack Family",
-          detailTitle: "Nintendo Switch Online + Expansion Pack Family",
-          detailIntro: "Expansion Pack Family covers up to eight Nintendo Accounts with expanded benefits:",
-          detailItems: [
-            ["Family Coverage", "Covers up to eight Nintendo Accounts."],
-            ["Expanded Classics", "Adds Nintendo 64, Game Boy Advance, Sega Genesis, and other expanded benefits."],
-          ],
-          plans: [
-            { id: "nintendo-expansion-family-yearly", label: "Yearly", price: 79.99, duration: "Yearly", legacyNames: ["Nintendo Expansion Pack - Yearly (Up to 8 accounts)"] },
-          ],
-        },
-      ],
-    },
-  ];
+  const { categories, providers } = window.StreamReviewCatalog;
 
   const { planById, tierById, legacyPlanToId } = buildIndexes(providers);
 
-  activeProviderId = providers[0].id;
+  activeCategory = categories[0].id;
   renderProviders();
   restoreUiState();
   loadSubscriptions();
@@ -256,6 +65,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewTarget = e.target.closest("[data-view-target]");
     if (viewTarget) {
       setView(viewTarget.getAttribute("data-view-target"));
+    }
+
+    const categoryTab = e.target.closest(".category-tab");
+    if (categoryTab) {
+      selectCategory(categoryTab.getAttribute("data-category-id"));
     }
 
     const providerTab = e.target.closest(".provider-tab");
@@ -370,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const tabs = [...document.querySelectorAll(".provider-tab:not(:disabled)")];
+    const tabs = [...document.querySelectorAll(".provider-tab:not(:disabled):not([hidden])")];
     const currentIndex = tabs.indexOf(document.activeElement);
     if (currentIndex === -1) {
       return;
@@ -425,11 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.body.addEventListener("change", (e) => {
-    if (e.target.id === "categoryFilter") {
-      activeCategory = e.target.value || "all";
-      applyPlanFilter();
-    }
-
     if (e.target.id === "importBackup") {
       const file = e.target.files[0];
       e.target.value = "";
@@ -466,10 +275,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderProviders() {
+    const categoryTabs = document.getElementById("categoryTabs");
     const providerTabs = document.getElementById("providerTabs");
     const providerGrid = document.getElementById("providerGrid");
+    categoryTabs.textContent = "";
     providerTabs.textContent = "";
     providerGrid.textContent = "";
+
+    categories.forEach((category) => {
+      categoryTabs.appendChild(createCategoryTab(category));
+    });
 
     providers.forEach((provider) => {
       providerTabs.appendChild(createProviderTab(provider));
@@ -477,14 +292,48 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function createCategoryTab(category) {
+    const tab = document.createElement("button");
+    tab.className = "category-tab";
+    tab.type = "button";
+    tab.setAttribute("data-category-id", category.id);
+
+    const icon = document.createElement("i");
+    icon.className = category.iconClass;
+    icon.setAttribute("aria-hidden", "true");
+
+    const name = document.createElement("span");
+    name.textContent = category.name;
+
+    const count = document.createElement("span");
+    count.className = "tab-count";
+    count.hidden = true;
+
+    tab.append(icon, name, count);
+    return tab;
+  }
+
+  // Provider colours come from the catalog, so new providers need no extra CSS.
+  function applyProviderTheme(element, provider) {
+    if (!provider || !provider.theme) {
+      return;
+    }
+
+    element.style.setProperty("--brand", provider.theme.brand);
+    element.style.setProperty("--brand-light", provider.theme.light);
+    element.style.setProperty("--brand-border", provider.theme.border);
+  }
+
   function createProviderTab(provider) {
     const tab = document.createElement("button");
-    tab.className = `provider-tab provider-tab-${provider.id}`;
+    tab.className = "provider-tab";
+    applyProviderTheme(tab, provider);
     tab.type = "button";
     tab.id = `tab-${provider.id}`;
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-controls", `panel-${provider.id}`);
     tab.setAttribute("data-provider-id", provider.id);
+    tab.setAttribute("data-category", provider.category);
 
     const icon = document.createElement("i");
     icon.className = provider.iconClass;
@@ -497,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Narrow screens show just the brand ("PlayStation", "Xbox", "Nintendo").
     const shortName = document.createElement("span");
     shortName.className = "tab-short";
-    shortName.textContent = provider.name.split(" ")[0];
+    shortName.textContent = provider.shortName || provider.name;
 
     const count = document.createElement("span");
     count.className = "tab-count";
@@ -509,7 +358,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createProviderPanel(provider) {
     const panel = document.createElement("section");
-    panel.className = `provider-column provider-panel-${provider.id}`;
+    panel.className = "provider-column";
+    applyProviderTheme(panel, provider);
     panel.id = `panel-${provider.id}`;
     panel.setAttribute("role", "tabpanel");
     panel.setAttribute("aria-labelledby", `tab-${provider.id}`);
@@ -548,9 +398,9 @@ document.addEventListener("DOMContentLoaded", () => {
     tierName.textContent = tier.name;
     const summary = document.createElement("p");
     summary.className = "tier-summary";
-    summary.textContent = tier.detailItems
+    summary.textContent = tier.summary || tier.detailItems
       .map(([label]) => label)
-      .filter((label) => !/offer|trial|bonus|availability/i.test(label))
+      .filter((label) => !/offer|trial|bonus|availability|price/i.test(label))
       .slice(0, 3)
       .join(" · ");
     heading.append(tierName, summary);
@@ -645,9 +495,16 @@ document.addEventListener("DOMContentLoaded", () => {
       stored = {};
     }
 
-    if (providers.some((provider) => provider.id === stored.provider)) {
-      activeProviderId = stored.provider;
+    if (categories.some((category) => category.id === stored.category)) {
+      activeCategory = stored.category;
     }
+
+    const storedProviders = stored.providers || {};
+    providers.forEach((provider) => {
+      if (storedProviders[provider.category] === provider.id || stored.provider === provider.id) {
+        activeProviderByCategory[provider.category] = provider.id;
+      }
+    });
 
     const hashView = location.hash.slice(1);
     const requestedView = isKnownView(hashView) ? hashView : stored.view;
@@ -661,7 +518,8 @@ document.addEventListener("DOMContentLoaded", () => {
     writeStorage(uiStateKey, JSON.stringify({
       view: activeView,
       mainView: activeMainView,
-      provider: activeProviderId,
+      category: activeCategory,
+      providers: activeProviderByCategory,
     }));
   }
 
@@ -710,12 +568,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function selectProvider(providerId) {
-    if (!providers.some((provider) => provider.id === providerId)) {
+  function getActiveProviderId(categoryId) {
+    const remembered = activeProviderByCategory[categoryId];
+    if (remembered) {
+      return remembered;
+    }
+
+    const firstProvider = providers.find((provider) => provider.category === categoryId);
+    return firstProvider ? firstProvider.id : "";
+  }
+
+  function selectCategory(categoryId) {
+    if (!categories.some((category) => category.id === categoryId)) {
       return;
     }
 
-    activeProviderId = providerId;
+    activeCategory = categoryId;
+    // Picking a category is navigation, so it ends any search in progress.
+    if (activeSearch) {
+      activeSearch = "";
+      document.getElementById("planSearch").value = "";
+    }
+
+    saveUiState();
+    applyPlanFilter();
+  }
+
+  function selectProvider(providerId) {
+    const provider = providers.find((item) => item.id === providerId);
+    if (!provider) {
+      return;
+    }
+
+    activeProviderByCategory[provider.category] = providerId;
+    activeCategory = provider.category;
     saveUiState();
 
     // While a search or filter lists several providers, a tab jumps to that provider's results.
@@ -728,7 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function isNarrowingPlans() {
-    return Boolean(activeSearch) || activeFilter !== "all" || activeCategory !== "all";
+    return Boolean(activeSearch) || activeFilter !== "all";
   }
 
   function switchPlan(fromPlanId, toPlanId) {
@@ -1055,11 +941,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyPlanFilter() {
-    const planRows = document.querySelectorAll(".plan-tile");
+    const isSearching = Boolean(activeSearch);
+    const isNarrowing = isNarrowingPlans();
+    const activeProviderId = getActiveProviderId(activeCategory);
 
-    planRows.forEach((row) => {
+    // Search looks across every category; filters stay within the current one.
+    document.querySelectorAll(".plan-tile").forEach((row) => {
       const duration = row.getAttribute("data-duration");
-      const category = row.getAttribute("data-category") || "gaming";
+      const category = row.getAttribute("data-category");
       const searchableText = row.getAttribute("data-search") || "";
       const isSelected = row.classList.contains("selected-subscription");
       const shouldShow =
@@ -1067,13 +956,12 @@ document.addEventListener("DOMContentLoaded", () => {
           (activeFilter === "selected" && isSelected) ||
           (activeFilter === "monthly" && duration === "Monthly") ||
           (activeFilter === "annual" && duration === "Yearly")) &&
-        (activeCategory === "all" || category === activeCategory) &&
-        (!activeSearch || searchableText.includes(activeSearch));
+        (isSearching || category === activeCategory) &&
+        (!isSearching || searchableText.includes(activeSearch));
 
       row.classList.toggle("plan-hidden", !shouldShow);
     });
 
-    const isNarrowing = isNarrowingPlans();
     document.getElementById("providerGrid").classList.toggle("is-multi", isNarrowing);
 
     document.querySelectorAll(".tier-card").forEach((tierCard) => {
@@ -1083,17 +971,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Normally one provider shows at a time. While searching or filtering, every provider
     // with matches is listed so results are never hidden behind another tab.
+    const matchesByCategory = {};
     document.querySelectorAll(".provider-column").forEach((column) => {
       const providerId = column.getAttribute("data-provider-id");
-      const visibleRows = column.querySelectorAll(".plan-tile:not(.plan-hidden)");
-      const category = column.getAttribute("data-category") || "gaming";
-      const matchCount = activeCategory === "all" || category === activeCategory ? visibleRows.length : 0;
+      const category = column.getAttribute("data-category");
+      const matchCount = column.querySelectorAll(".plan-tile:not(.plan-hidden)").length;
       const isActiveTab = !isNarrowing && providerId === activeProviderId;
       const shouldShowColumn = isNarrowing ? matchCount > 0 : isActiveTab;
       column.classList.toggle("plan-hidden", !shouldShowColumn);
+      matchesByCategory[category] = (matchesByCategory[category] || 0) + matchCount;
 
       const tab = document.getElementById(`tab-${providerId}`);
       const tabCount = tab.querySelector(".tab-count");
+      tab.hidden = isSearching ? matchCount === 0 : category !== activeCategory;
       tab.classList.toggle("is-active", isActiveTab);
       tab.setAttribute("aria-selected", String(isActiveTab));
       tab.tabIndex = isActiveTab || (isNarrowing && matchCount > 0) ? 0 : -1;
@@ -1102,13 +992,23 @@ document.addEventListener("DOMContentLoaded", () => {
       tabCount.textContent = String(matchCount);
     });
 
+    document.querySelectorAll(".category-tab").forEach((tab) => {
+      const categoryId = tab.getAttribute("data-category-id");
+      const tabCount = tab.querySelector(".tab-count");
+      const isActive = categoryId === activeCategory && !isSearching;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-pressed", String(isActive));
+      tabCount.hidden = !isSearching;
+      tabCount.textContent = String(matchesByCategory[categoryId] || 0);
+    });
+
     const providerEmpty = document.getElementById("providerEmpty");
-    const hasVisibleColumn = document.querySelector(".provider-column:not(.plan-hidden)") !== null;
-    providerEmpty.hidden = hasVisibleColumn;
-    providerEmpty.textContent = activeCategory !== "all" && activeCategory !== "gaming"
-      ? `No built-in ${getCategoryLabel(activeCategory)} plans yet. Use + Custom to track one.`
-      : "No plans match these filters.";
+    providerEmpty.hidden = document.querySelector(".provider-column:not(.plan-hidden)") !== null;
+    providerEmpty.textContent = isSearching
+      ? `No plans match "${activeSearch}". Use + Custom to track a service that isn't listed.`
+      : "No plans match this filter.";
   }
+
 
   function toggleAddIcon(buttonElement, isAdded) {
     const icon = buttonElement.querySelector("i");
@@ -2066,6 +1966,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function createSubscriptionGroup(group) {
     const groupItem = document.createElement("li");
     groupItem.className = `subscription-group subscription-group-${group.provider.id}`;
+    if (group.provider.theme) {
+      groupItem.classList.add("is-themed");
+      applyProviderTheme(groupItem, group.provider);
+    }
 
     const groupSummary = summarizeSubscriptionCosts(group.subscriptions);
     const header = document.createElement("div");
@@ -2324,7 +2228,11 @@ document.addEventListener("DOMContentLoaded", () => {
     pricing.appendChild(createStrong("Pricing:"));
     pricing.append(` ${getTierPricing(tier)}`);
 
-    content.append(intro, benefits, pricing);
+    const checked = document.createElement("p");
+    checked.className = "prices-checked";
+    checked.textContent = `U.S. list prices, checked ${formatLongDate(record.provider.pricesCheckedOn)}.`;
+
+    content.append(intro, benefits, pricing, checked);
   }
 
   function showToast(message, type = "success") {
@@ -2380,7 +2288,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getPlanDisplayName(provider, tier, plan) {
-    return `${provider.planPrefix} ${tier.name} - ${plan.label}`;
+    // Some tier names already start with the brand ("Disney+ Premium"), so don't repeat it.
+    const tierName = tier.name.startsWith(provider.planPrefix) ? tier.name : `${provider.planPrefix} ${tier.name}`;
+    return `${tierName} - ${plan.label}`;
   }
 
   function getShortPlanName(plan) {
@@ -2397,6 +2307,13 @@ document.addEventListener("DOMContentLoaded", () => {
       month: "short",
       day: "numeric",
     });
+  }
+
+  function formatLongDate(dateValue) {
+    const date = parseDateOnly(dateValue);
+    return date
+      ? date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+      : "recently";
   }
 
   function formatDaysUntil(daysUntil) {

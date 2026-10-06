@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "check": "node --check script.js && node --check price-utils.js",
-    "test": "node tests/price-comparison.test.js"
+    "check": "node --check script.js && node --check price-utils.js && node --check catalog.js",
+    "test": "node tests/price-comparison.test.js && node tests/catalog.test.js"
   }
 }
