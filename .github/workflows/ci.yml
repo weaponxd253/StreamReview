@@ -1,8 +1,10 @@
 name: CI
 
+# Runs manually from the Actions tab for now. GitHub has been refusing to start jobs on
+# this account (they fail in seconds with no logs), which put a red X on every commit.
+# Once Actions billing/limits are sorted, add `push:` and `pull_request:` back under `on:`.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
