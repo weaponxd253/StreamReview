@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formatDateInput,
     getBestTwelveMonthProjection,
     getBillingIntervalMonths,
+    getBillingOptionValues,
     getChargeTotals,
     getComparableCost,
     getDaysUntil,
@@ -42,9 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "PlayStation Plus",
       iconClass: "fa-brands fa-playstation",
-      headerClass: "psHeader",
-      rowClass: "psSubheader",
-      questionClass: "psQuestion",
       tiers: [
         {
           id: "essential",
@@ -102,9 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "Xbox",
       iconClass: "fa-brands fa-xbox",
-      headerClass: "xboxHeader",
-      rowClass: "xboxSubheader",
-      questionClass: "xboxQuestion",
       tiers: [
         {
           id: "xbox-essential",
@@ -173,9 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
       category: "gaming",
       planPrefix: "Nintendo Switch Online",
       iconClass: "fa-solid fa-gamepad",
-      headerClass: "nintendoHeader",
-      rowClass: "nintendoSubHeader",
-      questionClass: "nintendoQuestion",
       tiers: [
         {
           id: "nintendo-switch-online",
@@ -271,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectProvider(providerTab.getAttribute("data-provider-id"));
     }
 
-    const planRow = e.target.closest(".list-group-item[data-plan-id]");
+    const planRow = e.target.closest(".plan-tile");
     const subscriptionButton = planRow ? planRow.querySelector(".add-subscription") : null;
     if (subscriptionButton) {
       const planId = subscriptionButton.getAttribute("data-plan-id");
@@ -532,71 +524,97 @@ document.addEventListener("DOMContentLoaded", () => {
     titleIcon.setAttribute("aria-hidden", "true");
     title.append(titleIcon, ` ${provider.name}`);
 
-    const tierList = document.createElement("ul");
-    tierList.className = "list-group list-group-flush tier-list";
-
+    const tierGrid = document.createElement("div");
+    tierGrid.className = "tier-grid";
     provider.tiers.forEach((tier) => {
-      const tierItem = document.createElement("li");
-      tierItem.className = `list-group-item tier-header ${provider.headerClass}`;
-
-      const tierName = document.createElement("span");
-      tierName.textContent = tier.name;
-
-      const infoButton = document.createElement("button");
-      infoButton.className = `plan-info ${provider.questionClass}`;
-      infoButton.type = "button";
-      infoButton.setAttribute("data-bs-toggle", "offcanvas");
-      infoButton.setAttribute("data-bs-target", "#descriptionOffcanvas");
-      infoButton.setAttribute("data-tier-id", tier.id);
-      infoButton.setAttribute("aria-label", `Show details for ${tier.detailTitle}`);
-
-      const infoIcon = document.createElement("i");
-      infoIcon.className = "fa-solid fa-circle-info";
-      infoIcon.setAttribute("aria-hidden", "true");
-      infoButton.append(infoIcon, " Details");
-
-      tierItem.append(tierName, infoButton);
-      tierList.appendChild(tierItem);
-
-      const planList = document.createElement("ul");
-      planList.className = "list-group list-group-flush";
-      tier.plans.forEach((plan) => {
-        planList.appendChild(createPlanRow(provider, tier, plan));
-      });
-      tierList.appendChild(planList);
+      tierGrid.appendChild(createTierCard(provider, tier));
     });
 
-    panel.append(title, tierList);
+    panel.append(title, tierGrid);
     return panel;
   }
 
-  function createPlanRow(provider, tier, plan) {
-    const row = document.createElement("li");
-    row.className = `list-group-item ${provider.rowClass}`;
-    row.setAttribute("data-plan-id", plan.id);
-    row.setAttribute("data-duration", normalizeDuration(plan.duration));
-    row.setAttribute("data-category", provider.category || "gaming");
-    row.setAttribute("data-search", `${provider.name} ${tier.name} ${plan.label} ${plan.duration}`.toLowerCase());
+  // Each tier is a card; its billing options sit side by side as tiles so they can be
+  // compared across one row instead of read down a list.
+  function createTierCard(provider, tier) {
+    const card = document.createElement("article");
+    card.className = "tier-card";
 
-    const label = document.createElement("div");
-    label.className = "fw-bold";
+    const header = document.createElement("header");
+    header.className = "tier-header";
+
+    const heading = document.createElement("div");
+    const tierName = document.createElement("h4");
+    tierName.textContent = tier.name;
+    const summary = document.createElement("p");
+    summary.className = "tier-summary";
+    summary.textContent = tier.detailItems
+      .map(([label]) => label)
+      .filter((label) => !/offer|trial|bonus|availability/i.test(label))
+      .slice(0, 3)
+      .join(" · ");
+    heading.append(tierName, summary);
+
+    const infoButton = document.createElement("button");
+    infoButton.className = "plan-info";
+    infoButton.type = "button";
+    infoButton.setAttribute("data-bs-toggle", "offcanvas");
+    infoButton.setAttribute("data-bs-target", "#descriptionOffcanvas");
+    infoButton.setAttribute("data-tier-id", tier.id);
+    infoButton.setAttribute("aria-label", `Show details for ${tier.detailTitle}`);
+
+    const infoIcon = document.createElement("i");
+    infoIcon.className = "fa-solid fa-circle-info";
+    infoIcon.setAttribute("aria-hidden", "true");
+    infoButton.append(infoIcon, " Details");
+
+    header.append(heading, infoButton);
+
+    const tiles = document.createElement("div");
+    tiles.className = "plan-tiles";
+    const optionValues = getBillingOptionValues(tier.plans);
+    tier.plans.forEach((plan, index) => {
+      tiles.appendChild(createPlanTile(provider, tier, plan, optionValues[index]));
+    });
+
+    card.append(header, tiles);
+    return card;
+  }
+
+  function createPlanTile(provider, tier, plan, optionValue) {
+    const tile = document.createElement("div");
+    tile.className = "plan-tile";
+    tile.setAttribute("data-plan-id", plan.id);
+    tile.setAttribute("data-duration", normalizeDuration(plan.duration));
+    tile.setAttribute("data-category", provider.category || "gaming");
+    tile.setAttribute("data-search", `${provider.name} ${tier.name} ${plan.label} ${plan.duration}`.toLowerCase());
+
+    const top = document.createElement("div");
+    top.className = "plan-tile-top";
+    const label = document.createElement("span");
+    label.className = "plan-tile-label";
     label.textContent = plan.label;
+    top.appendChild(label);
+    if (optionValue.isBestValue) {
+      const badge = document.createElement("span");
+      badge.className = "best-value-badge";
+      badge.textContent = "Best value";
+      top.appendChild(badge);
+    }
 
-    const price = document.createElement("span");
+    const price = document.createElement("div");
     price.className = "plan-price";
-    const months = getBillingIntervalMonths(plan.duration);
     const priceAmount = document.createElement("strong");
     priceAmount.textContent = formatCurrency(plan.price);
     const priceNote = document.createElement("small");
-    priceNote.textContent = months === 1
+    priceNote.textContent = getBillingIntervalMonths(plan.duration) === 1
       ? "per month"
-      : `${formatCurrency(plan.price / months)}/mo`;
+      : `${formatCurrency(optionValue.perMonth)}/mo`;
     price.append(priceAmount, priceNote);
 
-    const selectedBadge = document.createElement("span");
-    selectedBadge.className = "selected-pill";
-    selectedBadge.setAttribute("aria-hidden", "true");
-    selectedBadge.innerHTML = '<i class="fa-solid fa-check"></i> Selected';
+    const savings = document.createElement("span");
+    savings.className = "plan-savings";
+    savings.textContent = optionValue.savingsPercent > 0 ? `Save ${optionValue.savingsPercent}% vs monthly` : "";
 
     const addButton = document.createElement("button");
     addButton.className = "add-subscription";
@@ -605,16 +623,18 @@ document.addEventListener("DOMContentLoaded", () => {
     addButton.setAttribute("data-plan", getPlanDisplayName(provider, tier, plan));
     addButton.setAttribute("data-price", formatPrice(plan.price));
     addButton.setAttribute("data-duration", plan.duration);
-    addButton.setAttribute("title", "Add Subscription");
     addButton.setAttribute("aria-label", `Add ${getPlanDisplayName(provider, tier, plan)}`);
 
     const addIcon = document.createElement("i");
-    addIcon.className = "fa-solid fa-square-plus icon-plus";
+    addIcon.className = "fa-solid fa-plus";
     addIcon.setAttribute("aria-hidden", "true");
-    addButton.appendChild(addIcon);
+    const addLabel = document.createElement("span");
+    addLabel.className = "add-label";
+    addLabel.textContent = "Add";
+    addButton.append(addIcon, addLabel);
 
-    row.append(label, price, selectedBadge, addButton);
-    return row;
+    tile.append(top, price, savings, addButton);
+    return tile;
   }
 
   function restoreUiState() {
@@ -1005,7 +1025,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const subscriptionButton = getSubscriptionButton(planId);
 
     if (subscriptionButton) {
-      const listItem = subscriptionButton.closest(".list-group-item");
+      const listItem = subscriptionButton.closest(".plan-tile");
       if (listItem) {
         listItem.classList.toggle("selected-subscription", isHighlighted);
       }
@@ -1035,7 +1055,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function applyPlanFilter() {
-    const planRows = document.querySelectorAll(".list-group-item[data-plan-id]");
+    const planRows = document.querySelectorAll(".plan-tile");
 
     planRows.forEach((row) => {
       const duration = row.getAttribute("data-duration");
@@ -1056,17 +1076,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const isNarrowing = isNarrowingPlans();
     document.getElementById("providerGrid").classList.toggle("is-multi", isNarrowing);
 
-    document.querySelectorAll(".tier-header").forEach((tierHeader) => {
-      const planList = tierHeader.nextElementSibling;
-      const hasVisiblePlans = planList && planList.querySelector(".list-group-item[data-plan-id]:not(.plan-hidden)");
-      tierHeader.classList.toggle("plan-hidden", !hasVisiblePlans);
+    document.querySelectorAll(".tier-card").forEach((tierCard) => {
+      const hasVisiblePlans = tierCard.querySelector(".plan-tile:not(.plan-hidden)");
+      tierCard.classList.toggle("plan-hidden", !hasVisiblePlans);
     });
 
     // Normally one provider shows at a time. While searching or filtering, every provider
     // with matches is listed so results are never hidden behind another tab.
     document.querySelectorAll(".provider-column").forEach((column) => {
       const providerId = column.getAttribute("data-provider-id");
-      const visibleRows = column.querySelectorAll(".list-group-item[data-plan-id]:not(.plan-hidden)");
+      const visibleRows = column.querySelectorAll(".plan-tile:not(.plan-hidden)");
       const category = column.getAttribute("data-category") || "gaming";
       const matchCount = activeCategory === "all" || category === activeCategory ? visibleRows.length : 0;
       const isActiveTab = !isNarrowing && providerId === activeProviderId;
@@ -1093,25 +1112,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function toggleAddIcon(buttonElement, isAdded) {
     const icon = buttonElement.querySelector("i");
+    const label = buttonElement.querySelector(".add-label");
     const plan = buttonElement.getAttribute("data-plan");
-    const action = isAdded ? "Remove" : "Add";
 
     buttonElement.classList.toggle("added", isAdded);
-    buttonElement.setAttribute("title", `${action} Subscription`);
     if (plan) {
-      buttonElement.setAttribute("aria-label", `${action} ${plan}`);
+      buttonElement.setAttribute("aria-label", `${isAdded ? "Remove" : "Add"} ${plan}`);
     }
 
-    if (!icon) {
-      return;
+    if (icon) {
+      icon.className = isAdded ? "fa-solid fa-check" : "fa-solid fa-plus";
     }
 
-    if (isAdded) {
-      icon.classList.add("fa-square-minus", "icon-minus");
-      icon.classList.remove("fa-square-plus", "icon-plus");
-    } else {
-      icon.classList.add("fa-square-plus", "icon-plus");
-      icon.classList.remove("fa-square-minus", "icon-minus");
+    if (label) {
+      label.textContent = isAdded ? "Selected" : "Add";
     }
   }
 

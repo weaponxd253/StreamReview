@@ -7,6 +7,7 @@ const {
   formatCurrency,
   getBestTwelveMonthProjection,
   getBillingIntervalMonths,
+  getBillingOptionValues,
   getChargeTotals,
   getComparableCost,
   getDaysUntil,
@@ -257,4 +258,26 @@ test("escapes CSV cells and neutralizes formulas", () => {
   assert.equal(escapeCsvCell("@SUM(A1)"), '"\'@SUM(A1)"');
   assert.equal(escapeCsvCell("12.99"), '"12.99"');
   assert.equal(escapeCsvCell(null), '""');
+});
+
+test("compares billing options within a tier", () => {
+  const values = getBillingOptionValues([
+    { price: "10.99", duration: "Monthly" },
+    { price: "27.99", duration: "3 Months" },
+    { price: "79.99", duration: "Yearly" },
+  ]);
+
+  assert.deepEqual(values.map((value) => value.savingsPercent), [0, 15, 39]);
+  assert.deepEqual(values.map((value) => value.isBestValue), [false, false, true]);
+  assert.equal(values[2].perMonth.toFixed(2), "6.67");
+});
+
+test("does not mark a best value without a real choice", () => {
+  assert.deepEqual(getBillingOptionValues([{ price: "13.99", duration: "Monthly" }]), [
+    { perMonth: 13.99, savingsPercent: 0, isBestValue: false },
+  ]);
+
+  const yearlyOnly = getBillingOptionValues([{ price: "34.99", duration: "Yearly" }]);
+  assert.equal(yearlyOnly[0].isBestValue, false);
+  assert.equal(yearlyOnly[0].savingsPercent, 0);
 });
