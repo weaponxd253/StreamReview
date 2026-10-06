@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-controls", `panel-${provider.id}`);
     tab.setAttribute("data-provider-id", provider.id);
-    tab.setAttribute("data-category", provider.category);
+    tab.setAttribute("data-categories", getProviderCategories(provider).join(" "));
 
     const icon = document.createElement("i");
     icon.className = provider.iconClass;
@@ -369,7 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
     panel.setAttribute("role", "tabpanel");
     panel.setAttribute("aria-labelledby", `tab-${provider.id}`);
     panel.setAttribute("data-provider-id", provider.id);
-    panel.setAttribute("data-category", provider.category || "gaming");
+    panel.setAttribute("data-categories", getProviderCategories(provider).join(" "));
 
     // Only shown while searching or filtering, when several providers are listed together.
     const title = document.createElement("h3");
@@ -441,7 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tile.className = "plan-tile";
     tile.setAttribute("data-plan-id", plan.id);
     tile.setAttribute("data-duration", normalizeDuration(plan.duration));
-    tile.setAttribute("data-category", provider.category || "gaming");
+    tile.setAttribute("data-categories", (tier.categories || getProviderCategories(provider)).join(" "));
     tile.setAttribute("data-search", `${provider.name} ${tier.name} ${plan.label} ${plan.duration}`.toLowerCase());
 
     const top = document.createElement("div");
@@ -506,7 +506,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const storedProviders = stored.providers || {};
     providers.forEach((provider) => {
-      if (storedProviders[provider.category] === provider.id || stored.provider === provider.id) {
+      getProviderCategories(provider).forEach((categoryId) => {
+        if (storedProviders[categoryId] === provider.id) {
+          activeProviderByCategory[categoryId] = provider.id;
+        }
+      });
+      if (stored.provider === provider.id) {
         activeProviderByCategory[provider.category] = provider.id;
       }
     });
@@ -579,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return remembered;
     }
 
-    const firstProvider = providers.find((provider) => provider.category === categoryId);
+    const firstProvider = providers.find((provider) => getProviderCategories(provider).includes(categoryId));
     return firstProvider ? firstProvider.id : "";
   }
 
@@ -605,8 +610,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    activeProviderByCategory[provider.category] = providerId;
-    activeCategory = provider.category;
+    // A provider listed in several categories keeps the current one when it belongs there.
+    if (!getProviderCategories(provider).includes(activeCategory)) {
+      activeCategory = provider.category;
+    }
+    activeProviderByCategory[activeCategory] = providerId;
     saveUiState();
 
     // While a search or filter lists several providers, a tab jumps to that provider's results.
@@ -616,6 +624,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     applyPlanFilter();
+  }
+
+  function getProviderCategories(provider) {
+    return [provider.category, ...(provider.alsoIn || [])];
+  }
+
+  function getElementCategories(element) {
+    return (element.getAttribute("data-categories") || "").split(" ");
   }
 
   function isNarrowingPlans() {
@@ -951,9 +967,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeProviderId = getActiveProviderId(activeCategory);
 
     // Search looks across every category; filters stay within the current one.
+    const matchesByCategory = {};
     document.querySelectorAll(".plan-tile").forEach((row) => {
       const duration = row.getAttribute("data-duration");
-      const category = row.getAttribute("data-category");
+      const rowCategories = getElementCategories(row);
       const searchableText = row.getAttribute("data-search") || "";
       const isSelected = row.classList.contains("selected-subscription");
       const shouldShow =
@@ -961,10 +978,15 @@ document.addEventListener("DOMContentLoaded", () => {
           (activeFilter === "selected" && isSelected) ||
           (activeFilter === "monthly" && duration === "Monthly") ||
           (activeFilter === "annual" && duration === "Yearly")) &&
-        (isSearching || category === activeCategory) &&
+        (isSearching || rowCategories.includes(activeCategory)) &&
         (!isSearching || searchableText.includes(activeSearch));
 
       row.classList.toggle("plan-hidden", !shouldShow);
+      if (shouldShow) {
+        rowCategories.forEach((categoryId) => {
+          matchesByCategory[categoryId] = (matchesByCategory[categoryId] || 0) + 1;
+        });
+      }
     });
 
     document.getElementById("providerGrid").classList.toggle("is-multi", isNarrowing);
@@ -976,19 +998,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Normally one provider shows at a time. While searching or filtering, every provider
     // with matches is listed so results are never hidden behind another tab.
-    const matchesByCategory = {};
     document.querySelectorAll(".provider-column").forEach((column) => {
       const providerId = column.getAttribute("data-provider-id");
-      const category = column.getAttribute("data-category");
+      const providerCategories = getElementCategories(column);
       const matchCount = column.querySelectorAll(".plan-tile:not(.plan-hidden)").length;
       const isActiveTab = !isNarrowing && providerId === activeProviderId;
       const shouldShowColumn = isNarrowing ? matchCount > 0 : isActiveTab;
       column.classList.toggle("plan-hidden", !shouldShowColumn);
-      matchesByCategory[category] = (matchesByCategory[category] || 0) + matchCount;
 
       const tab = document.getElementById(`tab-${providerId}`);
       const tabCount = tab.querySelector(".tab-count");
-      tab.hidden = isSearching ? matchCount === 0 : category !== activeCategory;
+      tab.hidden = isSearching ? matchCount === 0 : !providerCategories.includes(activeCategory);
       tab.classList.toggle("is-active", isActiveTab);
       tab.setAttribute("aria-selected", String(isActiveTab));
       tab.tabIndex = isActiveTab || (isNarrowing && matchCount > 0) ? 0 : -1;

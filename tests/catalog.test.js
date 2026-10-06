@@ -52,3 +52,23 @@ test("every category has at least one provider", () => {
     assert.ok(providers.some((provider) => provider.category === category.id), category.id);
   });
 });
+
+test("extra categories and tier category limits are valid", () => {
+  const categoryIds = new Set(categories.map((category) => category.id));
+  providers.forEach((provider) => {
+    const listedIn = [provider.category, ...(provider.alsoIn || [])];
+    assert.equal(new Set(listedIn).size, listedIn.length, `${provider.id} repeats a category`);
+    listedIn.forEach((category) => assert.ok(categoryIds.has(category), `${provider.id} lists unknown ${category}`));
+
+    provider.tiers.forEach((tier) => {
+      (tier.categories || []).forEach((category) => {
+        assert.ok(listedIn.includes(category), `${tier.id} limited to ${category}, which ${provider.id} is not listed in`);
+      });
+    });
+
+    listedIn.forEach((category) => {
+      const hasTier = provider.tiers.some((tier) => !tier.categories || tier.categories.includes(category));
+      assert.ok(hasTier, `${provider.id} is listed in ${category} but has no tiers there`);
+    });
+  });
+});

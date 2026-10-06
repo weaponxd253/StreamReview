@@ -1,5 +1,9 @@
 // Built-in plan catalog. Prices are regular U.S. list prices; each provider records the
 // date they were last checked. Introductory offers are noted in details but not priced.
+//
+// A provider belongs to one `category` and can also be listed under others with
+// `alsoIn`; it is still one provider with one set of plans, so a selection shows (and
+// counts) once wherever it appears. A tier can limit where it is listed with `categories`.
 (function (root, factory) {
   const catalog = factory();
 
@@ -743,6 +747,7 @@
       name: "YouTube Premium",
       shortName: "YouTube",
       category: "music",
+      alsoIn: ["streaming"],
       planPrefix: "YouTube",
       iconClass: "fa-brands fa-youtube",
       theme: { brand: "#a50f0f", light: "#fff4f4", border: "#fecaca" },
@@ -751,6 +756,7 @@
         {
           id: "youtube-music-premium",
           name: "YouTube Music Premium",
+          categories: ["music"],
           detailTitle: "YouTube Music Premium",
           summary: "Ad-free music only · Background play",
           detailIntro: "Ad-free YouTube Music without the rest of YouTube Premium:",
