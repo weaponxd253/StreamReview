@@ -2065,6 +2065,19 @@ body {
     display: inline;
   }
 
+  .category-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .category-tab {
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px 8px;
+  }
+
   .provider-tab {
     gap: 6px;
     padding: 7px 10px;

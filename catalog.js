@@ -10,8 +10,9 @@
   root.StreamReviewCatalog = catalog;
 })(typeof globalThis !== "undefined" ? globalThis : window, function () {
   const categories = [
-    { id: "gaming", name: "Gaming", iconClass: "fa-solid fa-gamepad" },
-    { id: "streaming", name: "Streaming Video", iconClass: "fa-solid fa-tv" },
+    { id: "gaming", name: "Gaming", shortName: "Gaming", iconClass: "fa-solid fa-gamepad" },
+    { id: "streaming", name: "Streaming Video", shortName: "Streaming", iconClass: "fa-solid fa-tv" },
+    { id: "music", name: "Music", shortName: "Music", iconClass: "fa-solid fa-music" },
   ];
 
   const providers = [
@@ -609,6 +610,294 @@
           ],
           plans: [
             { id: "prime-video-ultra-monthly", label: "Monthly", price: 13.98, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "spotify",
+      name: "Spotify",
+      shortName: "Spotify",
+      category: "music",
+      planPrefix: "Spotify",
+      iconClass: "fa-brands fa-spotify",
+      theme: { brand: "#11712f", light: "#f0fdf4", border: "#bbf7d0" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "spotify-individual",
+          name: "Premium Individual",
+          detailTitle: "Spotify Premium Individual",
+          summary: "Ad-free · Offline listening · 1 account",
+          detailIntro: "Spotify Premium for one person:",
+          detailItems: [
+            ["Ad-Free", "Ad-free listening with offline downloads."],
+            ["Price Change", "Raised from $11.99 in February 2026 billing."],
+          ],
+          plans: [
+            { id: "spotify-individual-monthly", label: "Monthly", price: 12.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "spotify-duo",
+          name: "Premium Duo",
+          detailTitle: "Spotify Premium Duo",
+          summary: "2 Premium accounts under one roof",
+          detailIntro: "Two Premium accounts for people who live together:",
+          detailItems: [
+            ["Two Accounts", "Each person keeps their own account and recommendations."],
+            ["Price Change", "Raised from $16.99 in February 2026 billing."],
+          ],
+          plans: [
+            { id: "spotify-duo-monthly", label: "Monthly", price: 18.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "spotify-family",
+          name: "Premium Family",
+          detailTitle: "Spotify Premium Family",
+          summary: "Up to 6 Premium accounts under one roof",
+          detailIntro: "Up to six Premium accounts for a household:",
+          detailItems: [
+            ["Six Accounts", "Up to six accounts for family members living together."],
+            ["Price Change", "Raised from $19.99 in February 2026 billing."],
+          ],
+          plans: [
+            { id: "spotify-family-monthly", label: "Monthly", price: 21.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "spotify-student",
+          name: "Premium Student",
+          detailTitle: "Spotify Premium Student",
+          summary: "Discounted Premium for verified students · Includes Hulu with Ads",
+          detailIntro: "Discounted Premium for eligible college students:",
+          detailItems: [
+            ["Student Verification", "Requires enrollment at an accredited college or university."],
+            ["Hulu with Ads", "Included at no extra cost for eligible students."],
+            ["Price Change", "Raised from $5.99 in February 2026 billing."],
+          ],
+          plans: [
+            { id: "spotify-student-monthly", label: "Monthly", price: 6.99, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "apple-music",
+      name: "Apple Music",
+      shortName: "Apple Music",
+      category: "music",
+      planPrefix: "Apple Music",
+      iconClass: "fa-brands fa-apple",
+      theme: { brand: "#b3123c", light: "#fff1f4", border: "#fecdd3" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "apple-music-individual",
+          name: "Individual",
+          detailTitle: "Apple Music Individual",
+          summary: "Ad-free · Lossless and Dolby Atmos",
+          detailIntro: "Apple Music for one person:",
+          detailItems: [
+            ["Lossless and Spatial Audio", "Includes lossless audio and Dolby Atmos."],
+            ["Price Change", "Raised from $10.99 on July 17, 2026."],
+          ],
+          plans: [
+            { id: "apple-music-individual-monthly", label: "Monthly", price: 11.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "apple-music-family",
+          name: "Family",
+          detailTitle: "Apple Music Family",
+          summary: "Up to 6 people with Family Sharing",
+          detailIntro: "Apple Music for up to six people:",
+          detailItems: [
+            ["Family Sharing", "Each member gets their own library and recommendations."],
+            ["Price Change", "Raised from $16.99 on July 17, 2026."],
+          ],
+          plans: [
+            { id: "apple-music-family-monthly", label: "Monthly", price: 19.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "apple-music-student",
+          name: "Student",
+          detailTitle: "Apple Music Student",
+          summary: "Discounted Apple Music for verified students",
+          detailIntro: "Discounted Apple Music for eligible college students:",
+          detailItems: [
+            ["Student Verification", "Requires enrollment at an eligible college or university."],
+            ["Price Change", "Raised from $5.99 on July 17, 2026."],
+          ],
+          plans: [
+            { id: "apple-music-student-monthly", label: "Monthly", price: 6.99, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "youtube-premium",
+      name: "YouTube Premium",
+      shortName: "YouTube",
+      category: "music",
+      planPrefix: "YouTube",
+      iconClass: "fa-brands fa-youtube",
+      theme: { brand: "#a50f0f", light: "#fff4f4", border: "#fecaca" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "youtube-music-premium",
+          name: "YouTube Music Premium",
+          detailTitle: "YouTube Music Premium",
+          summary: "Ad-free music only · Background play",
+          detailIntro: "Ad-free YouTube Music without the rest of YouTube Premium:",
+          detailItems: [
+            ["Music Only", "Ad-free, background and offline listening in YouTube Music."],
+            ["Price Change", "Raised from $10.99 on April 10, 2026."],
+          ],
+          plans: [
+            { id: "youtube-music-premium-monthly", label: "Monthly", price: 11.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "youtube-premium-individual",
+          name: "Premium Individual",
+          detailTitle: "YouTube Premium Individual",
+          summary: "Ad-free YouTube and YouTube Music",
+          detailIntro: "Ad-free YouTube with YouTube Music Premium included:",
+          detailItems: [
+            ["Includes YouTube Music", "YouTube Music Premium is included."],
+            ["Ad-Free Video", "Ad-free videos, background play and downloads."],
+            ["Price Change", "Raised from $13.99 on April 10, 2026."],
+          ],
+          plans: [
+            { id: "youtube-premium-individual-monthly", label: "Monthly", price: 15.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "youtube-premium-family",
+          name: "Premium Family",
+          detailTitle: "YouTube Premium Family",
+          summary: "YouTube Premium for up to 5 household members",
+          detailIntro: "YouTube Premium for a household:",
+          detailItems: [
+            ["Household Members", "Share with up to five members of your household."],
+            ["Price Change", "Raised from $22.99 on April 10, 2026."],
+          ],
+          plans: [
+            { id: "youtube-premium-family-monthly", label: "Monthly", price: 26.99, duration: "Monthly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "amazon-music",
+      name: "Amazon Music Unlimited",
+      shortName: "Amazon Music",
+      category: "music",
+      planPrefix: "Amazon Music Unlimited",
+      iconClass: "fa-brands fa-amazon",
+      theme: { brand: "#0b5c80", light: "#eff8fc", border: "#bae6fd" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "amazon-music-prime",
+          name: "Individual (Prime members)",
+          detailTitle: "Amazon Music Unlimited Individual (Prime)",
+          summary: "Discounted for Amazon Prime members",
+          detailIntro: "Amazon Music Unlimited for Amazon Prime members:",
+          detailItems: [
+            ["Prime Required", "This price requires an Amazon Prime membership."],
+            ["Price Change", "Raised from $10.99 in March 2026."],
+          ],
+          plans: [
+            { id: "amazon-music-prime-monthly", label: "Monthly", price: 11.99, duration: "Monthly" },
+            { id: "amazon-music-prime-yearly", label: "Yearly", price: 119, duration: "Yearly" },
+          ],
+        },
+        {
+          id: "amazon-music-individual",
+          name: "Individual",
+          detailTitle: "Amazon Music Unlimited Individual",
+          summary: "No Amazon Prime membership needed",
+          detailIntro: "Amazon Music Unlimited without a Prime membership:",
+          detailItems: [
+            ["No Prime Needed", "Available without an Amazon Prime membership."],
+            ["Price Change", "Raised from $11.99 in March 2026."],
+          ],
+          plans: [
+            { id: "amazon-music-individual-monthly", label: "Monthly", price: 12.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "amazon-music-family",
+          name: "Family",
+          detailTitle: "Amazon Music Unlimited Family",
+          summary: "Up to 6 accounts streaming at once",
+          detailIntro: "Amazon Music Unlimited for up to six people:",
+          detailItems: [
+            ["Six Accounts", "Up to six accounts can stream at the same time."],
+            ["Price Change", "Raised from $19.99 and $199 per year in March 2026."],
+          ],
+          plans: [
+            { id: "amazon-music-family-monthly", label: "Monthly", price: 21.99, duration: "Monthly" },
+            { id: "amazon-music-family-yearly", label: "Yearly", price: 219, duration: "Yearly" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "tidal",
+      name: "Tidal",
+      shortName: "Tidal",
+      category: "music",
+      planPrefix: "Tidal",
+      iconClass: "fa-solid fa-wave-square",
+      theme: { brand: "#111827", light: "#f5f7fa", border: "#d9dee7" },
+      pricesCheckedOn: "2026-10-06",
+      tiers: [
+        {
+          id: "tidal-individual",
+          name: "Individual",
+          detailTitle: "Tidal Individual",
+          summary: "Ad-free · Lossless, hi-res FLAC and Dolby Atmos",
+          detailIntro: "Tidal for one person:",
+          detailItems: [
+            ["Hi-Res Audio", "Lossless, hi-res FLAC and Dolby Atmos."],
+            ["Price Change", "Raised from $10.99 from August 3, 2026 billing."],
+          ],
+          plans: [
+            { id: "tidal-individual-monthly", label: "Monthly", price: 11.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "tidal-family",
+          name: "Family",
+          detailTitle: "Tidal Family",
+          summary: "Up to 6 accounts · Hi-res audio",
+          detailIntro: "Tidal for a household:",
+          detailItems: [
+            ["Six Accounts", "Up to six accounts on one plan."],
+            ["Price Change", "Raised from $16.99 from August 3, 2026 billing."],
+          ],
+          plans: [
+            { id: "tidal-family-monthly", label: "Monthly", price: 19.99, duration: "Monthly" },
+          ],
+        },
+        {
+          id: "tidal-student",
+          name: "Student",
+          detailTitle: "Tidal Student",
+          summary: "Discounted Tidal for verified students",
+          detailIntro: "Discounted Tidal for eligible students:",
+          detailItems: [
+            ["Student Verification", "Requires enrollment at an eligible college or university."],
+            ["Price Change", "Raised from $5.49 from August 3, 2026 billing."],
+          ],
+          plans: [
+            { id: "tidal-student-monthly", label: "Monthly", price: 6.99, duration: "Monthly" },
           ],
         },
       ],

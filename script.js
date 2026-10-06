@@ -303,13 +303,18 @@ document.addEventListener("DOMContentLoaded", () => {
     icon.setAttribute("aria-hidden", "true");
 
     const name = document.createElement("span");
+    name.className = "tab-full";
     name.textContent = category.name;
+
+    const shortName = document.createElement("span");
+    shortName.className = "tab-short";
+    shortName.textContent = category.shortName || category.name;
 
     const count = document.createElement("span");
     count.className = "tab-count";
     count.hidden = true;
 
-    tab.append(icon, name, count);
+    tab.append(icon, name, shortName, count);
     return tab;
   }
 
@@ -1932,7 +1937,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentPlanId: subscription.id,
       recommendedPlanId: bestAlternative.plan.id,
       savings,
-      message: `Switch ${selectedRecord.tier.name} from ${selectedRecord.plan.label} to ${bestAlternative.plan.label}.`,
+      message: `Switch ${getTierDisplayName(selectedRecord.provider, selectedRecord.tier)} from ${selectedRecord.plan.label} to ${bestAlternative.plan.label}.`,
     };
   }
 
@@ -2288,9 +2293,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getPlanDisplayName(provider, tier, plan) {
-    // Some tier names already start with the brand ("Disney+ Premium"), so don't repeat it.
-    const tierName = tier.name.startsWith(provider.planPrefix) ? tier.name : `${provider.planPrefix} ${tier.name}`;
-    return `${tierName} - ${plan.label}`;
+    return `${getTierDisplayName(provider, tier)} - ${plan.label}`;
+  }
+
+  // Some tier names already start with the brand ("Disney+ Premium"), so don't repeat it.
+  function getTierDisplayName(provider, tier) {
+    return tier.name.startsWith(provider.planPrefix) ? tier.name : `${provider.planPrefix} ${tier.name}`;
   }
 
   function getShortPlanName(plan) {
