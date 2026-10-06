@@ -7,12 +7,6 @@
   --muted: #667085;
   --shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
   --shadow-soft: 0 8px 24px rgba(16, 24, 40, 0.08);
-  --ps-dark: #07158f;
-  --ps-light: #f3f8ff;
-  --xbox-dark: #006b1e;
-  --xbox-light: #f2fbf2;
-  --nintendo-dark: #9c0000;
-  --nintendo-light: #fff6f7;
   --selected-bg: #ecfdf3;
   --selected-border: #22c55e;
 }
@@ -122,16 +116,8 @@ body {
   margin-top: 10px;
 }
 
-.subscription-group-playstation {
-  border-left-color: var(--ps-dark);
-}
-
-.subscription-group-xbox {
-  border-left-color: var(--xbox-dark);
-}
-
-.subscription-group-nintendo {
-  border-left-color: var(--nintendo-dark);
+.subscription-group.is-themed {
+  border-left-color: var(--brand);
 }
 
 .subscription-group-legacy {
@@ -1232,8 +1218,44 @@ body {
   margin-bottom: 14px;
 }
 
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px;
+  color: var(--muted);
+  background: var(--surface);
+  font-weight: 800;
+}
+
+.category-tab:hover {
+  color: var(--text);
+}
+
+.category-tab.is-active {
+  border-color: var(--text);
+  color: #ffffff;
+  background: var(--text);
+}
+
+.category-tab .tab-count {
+  color: var(--text);
+  background: var(--surface-muted);
+}
+
 .provider-tabs {
   display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
   gap: 4px;
   border-radius: 10px;
   padding: 4px;
@@ -1264,16 +1286,12 @@ body {
   box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
 }
 
-.provider-tab-playstation.is-active i {
-  color: var(--ps-dark);
+.provider-tab.is-active i {
+  color: var(--brand);
 }
 
-.provider-tab-xbox.is-active i {
-  color: var(--xbox-dark);
-}
-
-.provider-tab-nintendo.is-active i {
-  color: var(--nintendo-dark);
+.provider-tab[hidden] {
+  display: none;
 }
 
 .provider-tab:disabled {
@@ -1291,6 +1309,7 @@ body {
 }
 
 .browse-filters {
+  margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1349,6 +1368,11 @@ body {
   font-weight: 600;
 }
 
+.prices-checked {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .provider-empty {
   margin: 0;
   border: 1px dashed var(--border);
@@ -1359,28 +1383,8 @@ body {
   text-align: center;
 }
 
-/* Provider colours are used only for headers, edges and selected states. */
-.provider-panel-playstation,
-.subscription-group-playstation {
-  --brand: var(--ps-dark);
-  --brand-light: var(--ps-light);
-  --brand-border: #c7d2fe;
-}
-
-.provider-panel-xbox,
-.subscription-group-xbox {
-  --brand: var(--xbox-dark);
-  --brand-light: var(--xbox-light);
-  --brand-border: #bbf7d0;
-}
-
-.provider-panel-nintendo,
-.subscription-group-nintendo {
-  --brand: var(--nintendo-dark);
-  --brand-light: var(--nintendo-light);
-  --brand-border: #fecaca;
-}
-
+/* Provider colours (--brand, --brand-light, --brand-border) are set per provider from
+   the catalog, and used only for headers, edges and selected states. */
 .provider-grid {
   display: grid;
   gap: 24px;
@@ -1577,16 +1581,12 @@ body {
   background: var(--brand);
 }
 
-.subscription-group-playstation .subscription-group-header,
-.subscription-group-xbox .subscription-group-header,
-.subscription-group-nintendo .subscription-group-header {
+.subscription-group.is-themed .subscription-group-header {
   border-bottom-color: var(--brand-border);
   background: var(--brand-light);
 }
 
-.subscription-group-playstation .subscription-group-header h6,
-.subscription-group-xbox .subscription-group-header h6,
-.subscription-group-nintendo .subscription-group-header h6 {
+.subscription-group.is-themed .subscription-group-header h6 {
   color: var(--brand);
 }
 
@@ -1946,9 +1946,26 @@ body {
     align-items: stretch;
   }
 
+  .browse-filters {
+    margin-left: 0;
+  }
+
+  .browse-toolbar {
+    min-width: 0;
+  }
+
+  .provider-tabs {
+    flex-wrap: nowrap;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Fade the right edge so it's clear more providers scroll into view. */
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+
   .provider-tab {
-    flex: 1;
-    justify-content: center;
+    flex: 0 0 auto;
   }
 
   .decision-tools,
@@ -2048,15 +2065,9 @@ body {
     display: inline;
   }
 
-  .provider-tabs {
-    min-width: 0;
-  }
-
   .provider-tab {
-    flex: 1 1 0;
     gap: 6px;
-    min-width: 0;
-    padding: 7px 6px;
+    padding: 7px 10px;
   }
 
   .plan-tiles {
